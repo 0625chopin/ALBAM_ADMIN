@@ -38,3 +38,14 @@ export { MOCK_ACTION_LOGS } from "./action-logs";
 
 // 관리자 계정 (FA001/FA023)
 export { MOCK_ADMIN_USERS } from "./admin-users";
+
+// 운영 설정 (FA060/FA061, 2차)
+export { MOCK_CODE_GROUPS, MOCK_POLICIES } from "./settings";
+export type { MockCodeGroup, MockPolicy } from "./settings";
+
+// 채팅·평점 모니터링 (FA070/FA080, 3차)
+export {
+  MOCK_ADMIN_MESSAGES,
+  MOCK_ADMIN_RATINGS,
+  maskPii,
+} from "./moderation";
