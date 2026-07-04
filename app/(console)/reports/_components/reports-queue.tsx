@@ -34,12 +34,27 @@ const STATUS_FILTERS: { value: ReportStatus | "all"; label: string }[] = [
 
 export function ReportsQueue({ reports }: { reports: Report[] }) {
   const [status, setStatus] = useState<ReportStatus | "all">("all");
+  // 낙관적 업데이트용 로컬 상태(Mock). 실 mutation(admin_resolve_report)은 A5(TA056).
+  const [data, setData] = useState<Report[]>(reports);
 
   const rows = useMemo(
-    () =>
-      status === "all" ? reports : reports.filter((r) => r.status === status),
-    [reports, status]
+    () => (status === "all" ? data : data.filter((r) => r.status === status)),
+    [data, status]
   );
+
+  const resolveReport = (id: string, resolution: string) =>
+    setData((d) =>
+      d.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              status: "resolved",
+              resolution: resolution || "처리 완료",
+              handledAt: new Date().toISOString(),
+            }
+          : r
+      )
+    );
 
   const columns: AdminTableColumn<Report>[] = [
     {
@@ -94,6 +109,7 @@ export function ReportsQueue({ reports }: { reports: Report[] }) {
             description="제재 연결 · 콘텐츠 삭제 · 반려 중 조치를 선택합니다(사유 필수)."
             actionLabel="처리 완료"
             summary={`대상: ${labelOf(REPORT_TARGET_LABEL, r.targetType)} · 사유: ${labelOf(REPORT_REASON_LABEL, r.reason)}`}
+            onConfirm={(reason) => resolveReport(r.id, reason)}
           />
         ) : (
           <span className="text-muted-foreground text-xs">

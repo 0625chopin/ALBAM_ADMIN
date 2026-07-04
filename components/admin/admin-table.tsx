@@ -55,7 +55,11 @@ export function AdminTable<T>({
             {columns.map((col) => (
               <TableHead
                 key={col.key}
-                className={cn(col.align && ALIGN[col.align], col.className)}
+                className={cn(
+                  "whitespace-nowrap",
+                  col.align && ALIGN[col.align],
+                  col.className
+                )}
               >
                 {col.header}
               </TableHead>
@@ -78,7 +82,11 @@ export function AdminTable<T>({
                 {columns.map((col) => (
                   <TableCell
                     key={col.key}
-                    className={cn(col.align && ALIGN[col.align], col.className)}
+                    className={cn(
+                      "whitespace-nowrap",
+                      col.align && ALIGN[col.align],
+                      col.className
+                    )}
                   >
                     {col.render
                       ? col.render(row)

@@ -34,10 +34,10 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border flex h-screen w-60 shrink-0 flex-col border-r">
-      <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
+    <aside className="bg-sidebar text-sidebar-foreground border-sidebar-border flex h-screen w-14 shrink-0 flex-col border-r md:w-60">
+      <div className="border-sidebar-border flex h-14 items-center justify-center gap-2 border-b px-2 md:justify-start md:px-4">
         <span className="text-lg">🛡️</span>
-        <span className="font-bold">알밤마켓 관리자</span>
+        <span className="hidden font-bold md:inline">알밤마켓 관리자</span>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-2">
         {NAV.map(({ href, label, icon: Icon, tier }) => {
@@ -47,17 +47,18 @@ export function AdminSidebar() {
             <Link
               key={href}
               href={href}
+              title={label}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                "flex items-center justify-center gap-3 rounded-md px-3 py-2 text-sm transition-colors md:justify-start",
                 active
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
-              <Icon className="size-4" />
-              <span>{label}</span>
+              <Icon className="size-4 shrink-0" />
+              <span className="hidden md:inline">{label}</span>
               {tier > 1 && (
-                <span className="text-sidebar-foreground/50 ml-auto text-[10px]">
+                <span className="text-sidebar-foreground/50 ml-auto hidden text-[10px] md:inline">
                   {tier}차
                 </span>
               )}
@@ -65,20 +66,21 @@ export function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="border-sidebar-border space-y-2 border-t p-3">
+      <div className="border-sidebar-border space-y-2 border-t p-2 md:p-3">
         <button
           type="button"
+          title="로그아웃"
           onClick={async () => {
             await createClient().auth.signOut();
             window.location.assign("/login");
           }}
-          className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+          className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center justify-center gap-3 rounded-md px-3 py-2 text-sm transition-colors md:justify-start"
         >
-          <LogOut className="size-4" />
-          <span>로그아웃</span>
+          <LogOut className="size-4 shrink-0" />
+          <span className="hidden md:inline">로그아웃</span>
         </button>
-        <p className="text-sidebar-foreground/60 px-3 text-xs">
-          Phase A-1 · 분리 인프라
+        <p className="text-sidebar-foreground/60 hidden px-3 text-xs md:block">
+          알밤마켓 운영자 콘솔
         </p>
       </div>
     </aside>

@@ -19,6 +19,7 @@ import { Button } from "@0625chopin/shared/ui/button";
 import { Textarea } from "@0625chopin/shared/ui/textarea";
 import { Label } from "@0625chopin/shared/ui/label";
 import { Badge } from "@0625chopin/shared/ui/badge";
+import { useToast } from "./toast";
 import type { ReactNode } from "react";
 
 export interface AdminActionDialogProps {
@@ -54,10 +55,21 @@ export function AdminActionDialog({
   onConfirm,
 }: AdminActionDialogProps) {
   const [reason, setReason] = useState("");
+  const [open, setOpen] = useState(false);
+  const toast = useToast();
   const disabled = requireReason && reason.trim().length === 0;
 
+  const handleConfirm = () => {
+    const trimmed = reason.trim();
+    onConfirm?.(trimmed);
+    // Mock 피드백: 조치가 감사 로그에 기록됨을 알림. 실 mutation 은 A5.
+    toast(`${title} 완료 (Mock)${trimmed ? ` · 사유: ${trimmed}` : ""}`);
+    setReason("");
+    setOpen(false);
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -101,7 +113,7 @@ export function AdminActionDialog({
           <Button
             variant={destructive ? "destructive" : "default"}
             disabled={disabled}
-            onClick={() => onConfirm?.(reason.trim())}
+            onClick={handleConfirm}
           >
             {actionLabel}
           </Button>

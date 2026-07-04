@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
+import { ToastProvider } from "@/components/admin/toast";
 import { assertAdminAccess } from "@/lib/auth/admin-gate";
 
 // 콘솔 셸: 좌측 사이드바 + 우측 콘텐츠.
@@ -24,12 +25,14 @@ export default async function ConsoleLayout({
           fallback 은 레이아웃 시프트 방지를 위해 사이드바 폭(w-60)만 유지. */}
       <Suspense
         fallback={
-          <div className="bg-sidebar border-sidebar-border h-screen w-60 shrink-0 border-r" />
+          <div className="bg-sidebar border-sidebar-border h-screen w-14 shrink-0 border-r md:w-60" />
         }
       >
         <AdminSidebar />
       </Suspense>
-      <main className="flex-1 overflow-x-auto">{children}</main>
+      <main className="flex-1 overflow-x-auto">
+        <ToastProvider>{children}</ToastProvider>
+      </main>
     </div>
   );
 }
