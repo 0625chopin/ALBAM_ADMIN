@@ -2,7 +2,7 @@
 
 > 회원·상품·거래·신고를 모니터링하고, 제재/강제 조치로 어뷰징·분쟁에 대응하며, 정책 수치를 운영 중 조정하는 **운영자 콘솔**.
 
-**상태: 진행중** · 작성일: 2026-07-04 · A-1(분리 인프라) 완료 · **A0·A1 완료 · A2 1차 완료(TA020~TA024)** · 다음 A2 2·3차(TA025~TA027)
+**상태: 진행중** · 작성일: 2026-07-04 · A-1(분리 인프라) 완료 · **A0·A1·A2 완료(TA001~TA027, Mock UI 전 화면)** · 다음 A3(상태화면·조치 인터랙션 → 마일스톤 AM1)
 
 > **🔀 분리 방침 확정 (2026-07-04)**: 관리자 콘솔은 일반 사이트와 **분리된 별도 앱/배포**로 구축한다. 목적: 보안 격리·독립 배포·운영 편의. 따라서 본 로드맵의 "같은 앱 `app/admin/**` 라우트 그룹" 전제는 **별도 앱(예: `apps/admin`) 전제로 대체**되며, 아래 사항이 추가된다:
 >
@@ -178,11 +178,11 @@
 | TA022 | ✅    | 회원 관리 화면 (목록·상세·이력)             | TA020  | FA020, FA021        | -            |
 | TA023 | ✅    | 상품/경매 관리 화면 (목록·필터·상세)        | TA020  | FA030, FA031        | -            |
 | TA024 | ✅    | 거래 관리 화면 (목록·필터·분쟁 상세)        | TA020  | FA040, FA041        | -            |
-| TA025 | - [ ] | 신고/제재 화면 (처리 큐·제재 이력) `2차`    | TA020  | FA050~FA052         | 🔴 OPEN-1    |
-| TA026 | - [ ] | 운영 설정 화면 (공통코드·정책 수치) `2차`   | TA020  | FA060, FA061        | -            |
-| TA027 | - [ ] | 선택 화면 (채팅/평점/심화통계) `3차(선택)`  | TA020  | FA070, FA080, FA090 | 🔴 OPEN-6    |
+| TA025 | ✅    | 신고/제재 화면 (처리 큐·제재 이력) `2차`    | TA020  | FA050~FA052         | 🟢 OPEN-1    |
+| TA026 | ✅    | 운영 설정 화면 (공통코드·정책 수치) `2차`   | TA020  | FA060, FA061        | -            |
+| TA027 | ✅    | 선택 화면 (채팅/평점/심화통계) `3차(선택)`  | TA020  | FA070, FA080, FA090 | 🟢 OPEN-6*   |
 
-> ✅ **A2 1차 완료(2026-07-04, TA020~TA024)**: shared 프리미티브 `table`/`chart`(recharts) 승격 + `components/admin/*` 6종(KpiCard/AdminTable(제네릭)/TrendChart/OpsWidget/SystemStatusCard/AdminActionDialog, 순수 props). Mock `lib/mocks/admin/*`(members/products/transactions/reports/suspensions/action-logs/admin-users/dashboard + barrel), `lib/format-admin.ts`·`lib/labels-admin.ts`. 화면: 대시보드(KPI6·추이토글·운영위젯4·시스템상태)·회원(목록필터·상세이력·조치버튼)·상품(신고많은순 정렬·상세)·거래(분쟁상세·타임라인) 전부 `/sample` 전시. 조치 버튼은 UI 표시만(1차=primary, 2차=`2차` 뱃지, 인터랙션 A3/TA031). `check-all`+`next build`(동적 [id] ◐ PPR)+Playwright(차트 실렌더·필터·정렬·다이얼로그 사유검증) 통과. `.npmrc install-links=true`로 shared file: 복사본 고정(Turbopack exports 해석). **다음: TA025~027(2·3차) 후속 라운드** — 리뷰 후 진행, TA027 착수 전 OPEN-6 확정 필요. **⏳ shared 레포(almbam-shared) 신규 파일(src/ui/table·chart.tsx, package.json recharts)은 별도 커밋 필요.**
+> ✅ **A2 완료(2026-07-04, TA020~TA027)**: shared 프리미티브 `table`/`chart`(recharts) 승격 + `components/admin/*` 6종(KpiCard/AdminTable(제네릭)/TrendChart/OpsWidget/SystemStatusCard/AdminActionDialog, 순수 props). Mock `lib/mocks/admin/*`(members/products/transactions/reports/suspensions/action-logs/admin-users/dashboard/settings/moderation + barrel), `lib/format-admin.ts`·`lib/labels-admin.ts`. **전 화면**: 대시보드·회원·상품(신고순)·거래(분쟁) [1차] + 신고/제재·운영설정(정책 범위검증) [2차] + 채팅(PII 마스킹·OPEN-6*)·평점·심화통계 [3차] — 조치 버튼은 UI 표시만(1차=primary, 2차=`2차` 뱃지, 인터랙션 A3/TA031). `check-all`+`next build`(동적 [id] ◐ PPR)+Playwright(차트 실렌더·필터·정렬·다이얼로그 사유검증·정책범위·채팅 마스킹) 통과. `.npmrc install-links=true`로 shared file: 복사본 고정(Turbopack exports 해석). **⏳ 후속: (1) shared 레포(almbam-shared) 신규 파일(src/ui/table·chart.tsx, package.json recharts) 별도 커밋, (2) OPEN-6(채팅 열람 개인정보 정책) 최종 확정 — Mock은 마스킹 기본안 적용, 실 열람+감사는 A5, (3) 조치 인터랙션은 A3(TA030~).**
 
 - **TA020 세부**
   - [x] `lib/mocks/admin/*` — 관리자 신규 엔티티(admin_users/reports/admin_action_logs/user_suspensions) + 대시보드 집계 더미(KPI/추이/위젯) 파생, barrel
@@ -203,17 +203,16 @@
 - **TA024 세부 — 거래 관리(FA040~FA042)**
   - [x] 목록·필터: 상태(TransactionStatus)·당사자 검색 — FA040 `1차`
   - [x] 분쟁 상세 + 조치(강제 취소/완료) + 자동완료(24h) 추적 뷰 — FA041 `1차`/FA042 `2차`
-- **TA025 세부 — 신고/제재(FA050~FA052) `2차`** 🔴 OPEN-1(신고 시스템 최종 범위)
-  - [ ] 사용자 측 신고 UI(상품/사용자/메시지/평점 대상, 사유 선택+상세) — FA050
-  - [ ] 신고 처리 큐(대상유형·사유·상태, 제재·삭제·반려) — FA051
-  - [ ] 제재 이력(신고→제재 연결, 회원별 누적) — FA052
+- **TA025 세부 — 신고/제재(FA050~FA052) `2차`** 🟢 OPEN-1(신고 2차 도입 결정, 타입 선반영)
+  - [x] 신고 처리 큐(대상유형·사유·상태 필터, 제재·삭제·반려 처리 버튼 UI) — FA051 (사용자 측 신고 UI FA050은 공개앱 몫)
+  - [x] 제재 이력(회원별 정지 누적, 신고→제재 연결 뷰) — FA052
 - **TA026 세부 — 운영 설정(FA060, FA061) `2차`**
-  - [ ] 공통코드 CRUD(`code_groups`/`codes` 카테고리/지역/등급/진행시간 옵션) — FA060
-  - [ ] 정책 수치 조정 UI(`codes.policy` 증가폭·자동완료·패널티 임계) + **범위 검증 표시** — FA061
+  - [x] 공통코드 목록(`code_groups`/`codes` 카테고리/지역/진행시간 옵션) — FA060 (CRUD 인터랙션은 A3)
+  - [x] 정책 수치 조정 UI(`codes.policy` 증가폭·자동완료·패널티 임계) + **범위 검증 표시**(클램프 안내) — FA061
 - **TA027 세부 — 선택 화면 `3차(선택)`**
-  - [ ] 채팅 모니터링(신고 채팅방/메시지 조회·블라인드) — FA070 🔴 OPEN-6(개인정보 열람 정책)
-  - [ ] 악성 평점 처리(삭제/코멘트 블라인드) — FA080
-  - [ ] 기간별 심화 통계·CSV 내보내기 — FA090
+  - [x] 채팅 모니터링(신고 채팅방/메시지 조회·블라인드) — FA070 · OPEN-6* Mock은 **PII 마스킹 + 열람 범위 제한** 기본안 적용(원문 열람+감사는 A5, 정책 최종확정 필요)
+  - [x] 악성 평점 처리(삭제/코멘트 블라인드) — FA080
+  - [x] 기간별 심화 통계(추이·카테고리 분포)·CSV 내보내기 버튼 — FA090
 
 ---
 
@@ -327,12 +326,12 @@
 | ----- | -------------------------- | --------------- | ------- | ---- | ---------- |
 | A0    | 권한 모델 선행             | TA001~TA002     | 2       | 2    | ✅ 완료    |
 | A1    | 타입 & 라우트 골격         | TA010~TA012     | 3       | 3    | ✅ 완료    |
-| A2    | Mock UI 구현               | TA020~TA027     | 8       | 5    | 🟢 진행중  |
+| A2    | Mock UI 구현               | TA020~TA027     | 8       | 8    | ✅ 완료    |
 | A3    | 상태 화면 & 조치 인터랙션  | TA030~TA033     | 4       | 0    | ⬜ 착수 전 |
 | A4    | DB 설계 & RLS              | TA040~TA043     | 4       | 0    | ⬜ 착수 전 |
 | A5    | 실데이터 전환 & admin 조치 | TA050~TA058     | 9       | 0    | ⬜ 착수 전 |
 | A6    | 통합 테스트 & 품질         | TA060~TA064     | 5       | 0    | ⬜ 착수 전 |
-| —     | **관리자 콘솔 합계**       | **TA001~TA064** | **35**  | 10   | 🟢 진행중  |
+| —     | **관리자 콘솔 합계**       | **TA001~TA064** | **35**  | 13   | 🟢 진행중  |
 
 ## 🏁 마일스톤 개요
 
