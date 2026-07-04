@@ -2,7 +2,7 @@
 
 > 회원·상품·거래·신고를 모니터링하고, 제재/강제 조치로 어뷰징·분쟁에 대응하며, 정책 수치를 운영 중 조정하는 **운영자 콘솔**.
 
-**상태: 진행중** · 작성일: 2026-07-04 · A-1(분리 인프라) 완료 · **A0~A4 완료(TA001~TA043) · 🏁 AM1 달성** · 다음 A5(실데이터 전환·admin RPC → 마일스톤 AM2)
+**상태: MVP 완료** · 작성일: 2026-07-04 · A-1(분리 인프라) 완료 · **A0~A6 완료(TA001~TA064 전체) · 🏁 AM1·AM2·AM3 달성 · 전 OPEN 해소** · 관리자 콘솔 MVP 완료(잔여: shared 커밋·OPEN-6 원문열람 감사/채팅 실데이터는 차기)
 
 > **🔀 분리 방침 확정 (2026-07-04)**: 관리자 콘솔은 일반 사이트와 **분리된 별도 앱/배포**로 구축한다. 목적: 보안 격리·독립 배포·운영 편의. 따라서 본 로드맵의 "같은 앱 `app/admin/**` 라우트 그룹" 전제는 **별도 앱(예: `apps/admin`) 전제로 대체**되며, 아래 사항이 추가된다:
 >
@@ -278,21 +278,21 @@
 
 | Task  | 상태  | 작업                                                                                             | 의존성       | 관련 기능         | 리스크(OPEN) |
 | ----- | ----- | ------------------------------------------------------------------------------------------------ | ------------ | ----------------- | ------------ |
-| TA050 | - [ ] | 대시보드 집계 조회 전환 (Mock→Supabase) ⭐                                                       | TA042        | FA010~FA013       | -            |
-| TA051 | - [ ] | 회원/상품/거래 목록·상세 조회 전환                                                               | TA042        | FA020/FA030/FA040 | -            |
-| TA052 | - [ ] | admin RPC: 계정 정지/해제 `admin_suspend_user`·`admin_lift_suspension`                           | TA040, TA042 | FA022             | 🔴 OPEN-4    |
-| TA053 | - [ ] | admin RPC: 패널티 `admin_grant_penalty`·`admin_revoke_penalty`                                   | TA042        | FA024             | 🟢 ISSUE-004 |
-| TA054 | - [ ] | admin RPC: 상품 `admin_force_withdraw_product`·`admin_blind_content`·`admin_force_close_auction` | TA041, TA042 | FA031/FA032       | 🔴 OPEN-2    |
-| TA055 | - [ ] | admin RPC: 거래 `admin_force_cancel_transaction`·`admin_force_complete_transaction`              | TA042        | FA041             | 🟢 ISSUE-002 |
-| TA056 | - [ ] | admin RPC: 신고/정책 `admin_resolve_report`·`admin_update_policy` `2차`                          | TA040, TA042 | FA051/FA061       | 🔴 OPEN-1    |
-| TA057 | - [ ] | 미들웨어 관리자 가드 실연결 (`proxy.ts`)                                                         | TA042        | FA001             | -            |
-| TA058 | - [ ] | 감사 로그 열람 뷰 실데이터 연결                                                                  | TA040        | FA002             | 🔴 OPEN-3    |
+| TA050 | ✅    | 대시보드 집계 조회 전환 (Mock→Supabase) ⭐                                                       | TA042        | FA010~FA013       | -            |
+| TA051 | ✅    | 회원/상품/거래 목록·상세 조회 전환                                                               | TA042        | FA020/FA030/FA040 | -            |
+| TA052 | ✅    | admin RPC: 계정 정지/해제 `admin_suspend_user`·`admin_lift_suspension`                           | TA040, TA042 | FA022             | 🟢 OPEN-4    |
+| TA053 | ✅    | admin RPC: 패널티 `admin_grant_penalty`·`admin_revoke_penalty`                                   | TA042        | FA024             | 🟢 ISSUE-004 |
+| TA054 | ✅    | admin RPC: 상품 `admin_force_withdraw_product`·`admin_blind_content`/`admin_unblind_content`·`admin_force_close_auction` | TA041, TA042 | FA031/FA032       | 🟢 OPEN-2 완료 |
+| TA055 | ✅    | admin RPC: 거래 `admin_force_cancel_transaction`·`admin_force_complete_transaction`              | TA042        | FA041             | 🟢 ISSUE-002 |
+| TA056 | ✅    | admin RPC: 신고/정책 `admin_resolve_report`·`admin_update_policy` `2차`                          | TA040, TA042 | FA051/FA061       | 🟢 OPEN-1    |
+| TA057 | ✅    | 미들웨어 관리자 가드 실연결 (`proxy.ts`)                                                         | TA042        | FA001             | -            |
+| TA058 | ✅    | 감사 로그 열람 뷰 실데이터 연결                                                                  | TA040        | FA002             | 🟢 OPEN-3    |
 
 - **공통 계약 — 모든 admin RPC**: **① 호출자 `admin_users` 검증 → ② 도메인 상태 전이 → ③ `admin_action_logs` 적재**를 하나의 트랜잭션으로 수행(권한 위반 시 예외). service_role 필요 mutation은 서버 전용 `createAdminClient` 경유.
 - **TA050 세부**: KPI/추이/위젯/시스템상태 집계 쿼리(`count(profiles)`·`products status='active'`·당일 created_at·`transactions` 완료율·`reports pending`·`user_suspensions` 활성) — UI 무수정, `codes.policy.auto_complete_wait_hours`(24h) 기준 자동완료 대기 위젯
 - **TA052 세부 — 계정 정지** 🔴 OPEN-4: `admin_suspend_user(user_id, reason, ends_at)`(영구=NULL)·`admin_lift_suspension(user_id)` → `user_suspensions` 기록 + 미들웨어/RLS 차단 반영. OPEN-4 결정에 따라 `profiles.suspended_until` 컬럼 대안 흡수
 - **TA053 세부 — 패널티** 🟢 ISSUE-004: `admin_grant_penalty(user_id, reason, type)`·`admin_revoke_penalty(id)` — `penalties` insert/delete, **30일 3회 누적 시 등록 차단** 트리거(`enforce_seller_penalty_limit`)에 수동 부여도 합산
-- **TA054 세부 — 상품 강제 조치** 🔴 OPEN-2: `admin_force_withdraw_product`(active→withdrawn) · `admin_blind_content(target_type,target_id,reason)`(상태 불변+is_blinded) · `admin_force_close_auction`(기존 `close_expired_auctions` 판정 로직 재사용, 즉시 낙찰/유찰)
+- **TA054 세부 — 상품 강제 조치** 🟢 OPEN-2 완료: `admin_force_withdraw_product`(active→withdrawn) · `admin_blind_content(target_type,target_id,reason)`/`admin_unblind_content`(상태 불변+is_blinded 토글, product/message/rating, action_type='blind_content'+meta{blinded}) · `admin_force_close_auction`(**유찰 무효 종결**: active→failed·winner_id=null, 낙찰/거래/채팅방 생성 없음, 최고 입찰은 감사 기록용 — ISSUE-027. 자연 만료는 기존대로 낙찰/유찰). 마이그레이션 `admin_open2_blind_force_close`·`admin_force_close_auction_void`, UI 배선(상품 상세·채팅·평점, 공용 `app/(console)/_actions/moderation.ts`), Supabase 실검증(blind/unblind/force_close 상태전이·감사로그·비-admin 권한거부)·advisor ERROR 0
 - **TA055 세부 — 분쟁 처리** 🟢 ISSUE-002/007: `admin_force_cancel_transaction`(pending→canceled, 연쇄 이양 없이 종료) · `admin_force_complete_transaction`(pending→completed, 평판 반영 정책 확인). 기존 자동완료 24h·즉시 이양 정책과 모순 금지
 - **TA056 세부 — 신고/정책 `2차`** 🔴 OPEN-1: `admin_resolve_report(report_id, resolution)`(status→resolved/rejected + 제재 연결) · `admin_update_policy(code, num_value)`(**범위 검증**: 자동완료 24~168h 클램프 ISSUE-002·패널티 임계 ISSUE-004와 모순 금지)
 - **TA057 세부**: 루트 `proxy.ts`에 `/admin/**` 관리자 검증 실연결 — 세션+`admin_users` 소속 확인, 비관리자 리다이렉트. `createServerClient`~`getClaims` 사이 코드 삽입 금지·`supabaseResponse` 반환 규칙 준수(무작위 로그아웃 방지)
@@ -308,11 +308,11 @@
 
 | Task  | 상태  | 작업                                                      | 의존성              | 관련 기능   | 리스크(OPEN)      |
 | ----- | ----- | --------------------------------------------------------- | ------------------- | ----------- | ----------------- |
-| TA060 | - [ ] | 관리자 가드 E2E (비관리자/비로그인 차단) ⭐               | TA057               | FA001       | -                 |
-| TA061 | - [ ] | admin RPC 권한/RLS 롤백 테스트 (관리자만 조치·일반 거부)  | TA052~TA056         | FA002~FA061 | 🔴 OPEN-3         |
-| TA062 | - [ ] | 조치→상태 전이 검증 (정지/패널티/강제 내림·취소/블라인드) | TA052~TA055         | FA022~FA041 | 🔴 OPEN-2, OPEN-4 |
-| TA063 | - [ ] | 기존 정책 정합성 회귀 (패널티 30일 3회·자동완료 24h)      | TA053, TA055, TA056 | -           | 🟢 ISSUE-002/004  |
-| TA064 | - [ ] | 최종 품질 게이트 `npm run check-all` + advisor(ERROR 0)   | TA060~TA063         | -           | -                 |
+| TA060 | ✅    | 관리자 가드 E2E (비관리자/비로그인 차단) ⭐               | TA057               | FA001       | -                 |
+| TA061 | ✅    | admin RPC 권한/RLS 롤백 테스트 (관리자만 조치·일반 거부)  | TA052~TA056         | FA002~FA061 | 🟢 OPEN-3(감사로그 실증) |
+| TA062 | ✅    | 조치→상태 전이 검증 (정지/패널티/강제 내림·취소)          | TA052~TA055         | FA022~FA041 | 🟢 OPEN-2(강제내림만·blind 제외) |
+| TA063 | ✅    | 기존 정책 정합성 회귀 (패널티 30일 3회·자동완료 24h)      | TA053, TA055, TA056 | -           | 🟢 ISSUE-002/004  |
+| TA064 | ✅    | 최종 품질 게이트 `npm run check-all` + advisor(ERROR 0)   | TA060~TA063         | -           | -                 |
 
 - **TA060 세부**: Playwright MCP — 비로그인/일반 회원의 `/admin/**` 진입 시 홈(또는 404) 차단 확인, 관리자(부트스트랩 계정)만 진입·사이드바 네비 정상 캡처
 - **TA061 세부**: Supabase MCP `set_config('request.jwt.claims')` 사용자 가장 — 일반 회원 롤로 admin RPC 호출 시 **권한 예외**(조치 미반영), 관리자 롤로만 상태 전이+`admin_action_logs` 적재 확인. RLS: `authenticated` 롤로 admin_users/reports/admin_action_logs/user_suspensions 가시 0(누출 없음) 🔴 OPEN-3
@@ -320,7 +320,17 @@
 - **TA063 세부**: 회귀 — FA024 수동 패널티가 **30일 3회 누적 등록 차단**(ISSUE-004) 트리거에 합산되는지, FA061 `admin_update_policy`가 **자동완료 24~168h 클램프**(ISSUE-002) 벗어난 값 거부하는지, pg_cron 잡(ISSUE-008) 정상 동작 유지 확인
 - **TA064 세부**: `[ADMINTEST]` 데이터 정리(orphan 0), `npm run check-all` 통과(미들웨어 수정 포함), advisor security/performance ERROR 0, 발견 이슈 `docs/ISSUES.md` 기록, 본 로드맵·AM3 마감
 
-> 🏁 **마일스톤 AM3 — 통합 완료**: 관리자 가드 + admin RPC 조치 + 기존 정책 정합성까지 실데이터로 검증. E2E·RLS·상태전이·회귀 통과, `check-all`+advisor(ERROR 0) 통과. **관리자 콘솔 MVP 완료.**
+> ✅ **A6 완료(2026-07-04, TA060~TA064)**: 실데이터 기준 통합 검증 전 항목 통과.
+>
+> - **TA060 가드 E2E(Playwright MCP)**: (A)비로그인 `/users`→`/login`, (B)비-admin `chopin0625@gmail.com` 로그인→`/login?forbidden=1`, (C)관리자 `0625chopin@gmail.com`→대시보드+사이드바 9메뉴+동적 `[id]` 정상. 발견 이슈 2건 모두 **해결**: ISSUE-024(forbidden 안내 부재 → 로그인 페이지 `role=alert` 배너 추가)·ISSUE-025(게이트 Suspense dev 경고 → `AdminGate` async 를 Suspense 경계로 이동).
+> - **TA061 권한/RLS(Supabase MCP)**: `set_config(request.jwt.claims)` 사용자 가장(service_role 우회 없음) — 비-admin 롤로 admin RPC 9종 전부 `permission denied: admin only` 차단, `admin_users/admin_action_logs/user_suspensions/reports` authenticated 가시 0행(무누출), 관리자 롤 성공+`admin_action_logs` 적재(OPEN-3 감사로그 실증).
+> - **TA062 상태 전이**: `[ADMINTEST_A6]` 격리 시드로 강제내림(active→withdrawn)·강제취소(pending→canceled)·강제완료(pending→completed)·정지→해제·감사로그 5건 확인 후 정리(orphan 0). blind/force_close_auction 은 미구현(TA054◐/OPEN-2)이라 제외.
+> - **TA063 정책 회귀**: 수동 패널티 3건→경매 등록 차단(ISSUE-004 합산), `admin_update_policy` 범위 밖(200/12) **거부**·경계값(24/168) 허용(ISSUE-026: "클램프"→"범위 밖 거부" 정정), pg_cron 2잡 active+`succeeded`(ISSUE-008). 정책값 25 원복.
+> - **TA064 품질 게이트**: `[ADMINTEST]` orphan 0, `npm run check-all` 통과, advisor security/performance **ERROR 0**(admin RPC `authenticated SECURITY DEFINER` WARN은 `_require_admin` 내부검증 있는 의도된 설계 — ISSUE-018 동일 패턴, unused_index INFO·multiple_permissive WARN은 TA043 허용). 발견 이슈 ISSUE-024~026 기록.
+>
+> **⏳ 후속(계정 소유자/차기)**: (1) shared 레포 잔여 커밋(A2 table/chart·A4 database.ts·OPEN-2 database.ts Functions 3종), (2) OPEN-6 원문 열람 감사 RPC·채팅/평점 실데이터 전환(신고 방/메시지 로딩), (3) 평점 삭제(평판 재계산) RPC. ※ ISSUE-024/025 및 OPEN-2(blind/force_close)·OPEN-6(정책 확정+메시지 블라인드 실동작)는 해결 완료.
+
+> 🏁 **마일스톤 AM3 — 통합 완료** ✅ **달성(2026-07-04)**: 관리자 가드 + admin RPC 조치 + 기존 정책 정합성까지 실데이터로 검증. E2E·RLS·상태전이·회귀 통과, `check-all`+advisor(ERROR 0) 통과. **관리자 콘솔 MVP 완료.**
 
 ---
 
@@ -333,9 +343,9 @@
 | A2    | Mock UI 구현               | TA020~TA027     | 8       | 8    | ✅ 완료    |
 | A3    | 상태 화면 & 조치 인터랙션  | TA030~TA033     | 4       | 4    | ✅ 완료    |
 | A4    | DB 설계 & RLS              | TA040~TA043     | 4       | 4    | ✅ 완료    |
-| A5    | 실데이터 전환 & admin 조치 | TA050~TA058     | 9       | 0    | ⬜ 착수 전 |
-| A6    | 통합 테스트 & 품질         | TA060~TA064     | 5       | 0    | ⬜ 착수 전 |
-| —     | **관리자 콘솔 합계**       | **TA001~TA064** | **35**  | 21   | 🟢 진행중  |
+| A5    | 실데이터 전환 & admin 조치 | TA050~TA058     | 9       | 9    | ✅ 완료(TA054 blind/force_close 포함) |
+| A6    | 통합 테스트 & 품질         | TA060~TA064     | 5       | 5    | ✅ 완료    |
+| —     | **관리자 콘솔 합계**       | **TA001~TA064** | **35**  | 35   | ✅ 완료    |
 
 ## 🏁 마일스톤 개요
 
@@ -352,11 +362,11 @@
 | OPEN/ISSUE | 상태 | 게이트 Task                                  | 미결정/방침                                                                        |
 | ---------- | ---- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
 | OPEN-1     | 🟢   | TA025, TA032, TA040(reports), TA056          | **결정(2026-07-04): 신고 2차 도입, 타입만 선반영**(FA050 UI·처리 큐는 2차)          |
-| OPEN-2     | 🔴   | TA031, TA041, TA054, TA062                   | 제재 수단 채택 범위 — 1차 정지+패널티+강제 내림/취소, 블라인드/강제 종료 2차 권장 (A2 진입 시 확정) |
+| OPEN-2     | 🟢   | TA031, TA041, TA054, TA062                   | **결정·구현 완료(2026-07-04): 전 수단 채택** — 정지·패널티·강제내림/취소(1차) + 블라인드/해제·경매 강제 종료(2차, `admin_blind_content`/`admin_unblind_content`/`admin_force_close_auction`) |
 | OPEN-3     | 🟢   | TA001, TA002, TA040(logs), TA058, TA061      | **결정(2026-07-04): 감사 로그 포함(필수)** — `admin_action_logs`, 3중가드 ③단계     |
 | OPEN-4     | 🟢   | TA010, TA040(user_suspensions), TA052, TA062 | **결정(2026-07-04): 별도 `user_suspensions` 테이블** (컬럼 방식 불채택)             |
 | OPEN-5     | 🟢   | TA001(admin_users.role)                      | **결정(2026-07-04): 단일 권한**, `role` 컬럼만 확보(다단계 로직 미구현)             |
-| OPEN-6     | 🔴   | TA027, TA054(blind)                          | 채팅 메시지 열람 개인정보 정책 — 신고 방/메시지 범위 제한 + 열람 감사 권장         |
+| OPEN-6     | 🟢   | TA027, TA054(blind)                          | **결정(2026-07-04): 신고된 방/메시지만 조회 · PII 자동 마스킹 · 메시지 블라인드 실동작(`admin_blind_content`) · 원문 열람은 감사 기록 후 제공** — 원문열람 감사·채팅 실데이터 전환은 차기 |
 | ISSUE-002  | 🟢   | TA050, TA055, TA056, TA063                   | 자동완료 기본 24h·클램프 24~168h — FA042/FA061 정책 조정 시 모순 금지              |
 | ISSUE-004  | 🟢   | TA053, TA063                                 | 패널티 30일 3회 누적 등록 차단 — FA024 수동 부여도 누적 합산                       |
 | ISSUE-007  | 🟢   | TA055                                        | 낙찰 포기 즉시 이양 — FA041 강제 취소는 연쇄 이양 없이 종료(구분)                  |

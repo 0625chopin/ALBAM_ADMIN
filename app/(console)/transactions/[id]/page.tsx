@@ -11,7 +11,11 @@ import { Button } from "@0625chopin/shared/ui/button";
 import { StatusBadge } from "@0625chopin/shared/common/status-badge";
 import { AdminActionDialog } from "@/components/admin";
 import { PagePlaceholder } from "@/components/console/page-placeholder";
-import { getMockTransactionDetail } from "@/lib/mocks/admin";
+import { getTransactionDetail } from "@/lib/queries/transactions";
+import {
+  forceCancelTransactionAction,
+  forceCompleteTransactionAction,
+} from "./_actions";
 import { formatCount, formatDateTime } from "@/lib/format-admin";
 import { TRANSACTION_STATUS_LABEL } from "@/lib/labels-admin";
 
@@ -22,7 +26,7 @@ async function TransactionDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const tx = getMockTransactionDetail(id);
+  const tx = await getTransactionDetail(id);
 
   if (!tx) {
     return (
@@ -76,6 +80,7 @@ async function TransactionDetail({
               actionLabel="강제 취소"
               destructive
               summary={`대상: ${tx.productTitle} · 진행중 → 취소`}
+              onConfirm={forceCancelTransactionAction.bind(null, tx.id)}
             />
             <AdminActionDialog
               trigger={<Button variant="outline">강제 완료</Button>}
@@ -83,6 +88,7 @@ async function TransactionDetail({
               description="진행중 거래를 완료(completed) 처리합니다. 평판 반영 정책을 확인하세요."
               actionLabel="강제 완료"
               summary={`대상: ${tx.productTitle} · 진행중 → 완료`}
+              onConfirm={forceCompleteTransactionAction.bind(null, tx.id)}
             />
           </div>
         )}

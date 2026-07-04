@@ -1,7 +1,7 @@
 "use client";
 
-// 신고 처리 큐 + 필터 (FA051, 클라이언트) — 2차, OPEN-1(신고 2차 도입)
-// 상태 필터 + 처리 버튼 UI(제재/삭제/반려, 인터랙션 A3/TA032). 데이터는 서버 페이지 props 주입.
+// 신고 처리 큐 + 필터 (FA051, 클라이언트) — 실 mutation(admin_resolve_report, TA056) 연동.
+// 상태 필터 + 처리(처리완료/반려) 버튼. 데이터는 서버 페이지 props 주입, 처리 후 revalidate + refresh.
 
 import { useMemo, useState } from "react";
 import { Button } from "@0625chopin/shared/ui/button";
@@ -16,6 +16,7 @@ import {
   labelOf,
 } from "@/lib/labels-admin";
 import type { Report, ReportStatus } from "@/lib/types";
+import { resolveReportAction } from "../_actions";
 
 const STATUS_VARIANT: Record<ReportStatus, BadgeProps["variant"]> = {
   pending: "default",
@@ -34,27 +35,13 @@ const STATUS_FILTERS: { value: ReportStatus | "all"; label: string }[] = [
 
 export function ReportsQueue({ reports }: { reports: Report[] }) {
   const [status, setStatus] = useState<ReportStatus | "all">("all");
-  // 낙관적 업데이트용 로컬 상태(Mock). 실 mutation(admin_resolve_report)은 A5(TA056).
-  const [data, setData] = useState<Report[]>(reports);
 
+  // 데이터는 서버 props 원천. 처리 후 Server Action 이 revalidatePath + router.refresh 로 갱신한다.
   const rows = useMemo(
-    () => (status === "all" ? data : data.filter((r) => r.status === status)),
-    [data, status]
+    () =>
+      status === "all" ? reports : reports.filter((r) => r.status === status),
+    [reports, status]
   );
-
-  const resolveReport = (id: string, resolution: string) =>
-    setData((d) =>
-      d.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              status: "resolved",
-              resolution: resolution || "처리 완료",
-              handledAt: new Date().toISOString(),
-            }
-          : r
-      )
-    );
 
   const columns: AdminTableColumn<Report>[] = [
     {
@@ -99,18 +86,37 @@ export function ReportsQueue({ reports }: { reports: Report[] }) {
       align: "center",
       render: (r) =>
         r.status === "pending" || r.status === "reviewing" ? (
-          <AdminActionDialog
-            trigger={
-              <Button size="sm" variant="outline">
-                처리
-              </Button>
-            }
-            title="신고 처리"
-            description="제재 연결 · 콘텐츠 삭제 · 반려 중 조치를 선택합니다(사유 필수)."
-            actionLabel="처리 완료"
-            summary={`대상: ${labelOf(REPORT_TARGET_LABEL, r.targetType)} · 사유: ${labelOf(REPORT_REASON_LABEL, r.reason)}`}
-            onConfirm={(reason) => resolveReport(r.id, reason)}
-          />
+          <div className="flex justify-center gap-1">
+            {/* 처리완료(resolved) — 제재 연결/콘텐츠 조치 후 종결 */}
+            <AdminActionDialog
+              trigger={
+                <Button size="sm" variant="outline">
+                  처리완료
+                </Button>
+              }
+              title="신고 처리 완료"
+              tier={2}
+              description="신고를 처리(제재 연결 · 콘텐츠 조치)하고 종결합니다. 처리 사유는 감사 로그에 기록됩니다."
+              actionLabel="처리 완료"
+              summary={`대상: ${labelOf(REPORT_TARGET_LABEL, r.targetType)} · 사유: ${labelOf(REPORT_REASON_LABEL, r.reason)}`}
+              onConfirm={(reason) => resolveReportAction(r.id, "resolved", reason)}
+            />
+            {/* 반려(rejected) — 조치 불필요 판단 */}
+            <AdminActionDialog
+              trigger={
+                <Button size="sm" variant="ghost">
+                  반려
+                </Button>
+              }
+              title="신고 반려"
+              tier={2}
+              destructive
+              description="신고를 반려합니다. 반려 사유는 감사 로그에 기록됩니다."
+              actionLabel="반려"
+              summary={`대상: ${labelOf(REPORT_TARGET_LABEL, r.targetType)} · 사유: ${labelOf(REPORT_REASON_LABEL, r.reason)}`}
+              onConfirm={(reason) => resolveReportAction(r.id, "rejected", reason)}
+            />
+          </div>
         ) : (
           <span className="text-muted-foreground text-xs">
             {r.resolution ?? "처리됨"}

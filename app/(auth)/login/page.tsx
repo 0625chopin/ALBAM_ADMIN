@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@0625chopin/shared/supabase/client";
 import { Button } from "@0625chopin/shared/ui/button";
 import { Input } from "@0625chopin/shared/ui/input";
@@ -19,11 +19,21 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // 비관리자(admin_users 미소속)가 콘솔 진입 시 미들웨어(proxy.ts)가 /login?forbidden=1 로
+  // 리다이렉트한다(ISSUE-024). 세션은 있으나 권한이 없는 상태이므로 안내 배너를 표시한다.
+  const [forbidden, setForbidden] = useState(false);
+
+  useEffect(() => {
+    setForbidden(
+      new URLSearchParams(window.location.search).get("forbidden") === "1"
+    );
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setForbidden(false); // 재로그인 시도 시 안내 배너 해제
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -47,6 +57,15 @@ export default function AdminLoginPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {forbidden && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-md border px-3 py-2 text-sm"
+            >
+              관리자 권한이 없는 계정입니다. 관리자 계정으로 로그인해 주세요.
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>

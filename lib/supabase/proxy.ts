@@ -40,14 +40,33 @@ export async function updateSession(request: NextRequest) {
   // 관리자 콘솔: /login 외 전 경로 보호. 미인증 → /login.
   const pathname = request.nextUrl.pathname;
   const isLoginRoute = pathname === "/login";
-  if (!user && !isLoginRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+
+  if (!user) {
+    if (!isLoginRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    // 미인증 + /login: 그대로 통과
+    return supabaseResponse;
   }
 
-  // TODO(TA057): 세션이 있으나 admin_users 미소속이면 콘솔 접근 거부/로그아웃.
-  //   const uid = user?.sub;  // admin_users 조회(RLS/RPC)로 관리자 여부 확인 후 미소속 시 /login.
+  // TA057: 세션은 있으나 admin_users 미소속(비관리자)이면 콘솔 접근 거부.
+  //   is_admin() RPC(SECURITY DEFINER, auth.uid() ∈ admin_users)로 판정. /login 은 검사 제외(루프 방지).
+  if (!isLoginRoute) {
+    const { data: isAdmin, error } = await supabase.rpc("is_admin");
+    if (error || isAdmin !== true) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("forbidden", "1");
+      const redirect = NextResponse.redirect(url);
+      // getClaims 가 세션 쿠키를 갱신했을 수 있으므로 리다이렉트 응답에 복사(무작위 로그아웃 방지).
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirect.cookies.set(cookie);
+      });
+      return redirect;
+    }
+  }
 
   // ⚠️ supabaseResponse 를 그대로 반환할 것(새 응답 생성 시 쿠키 복사 필수).
   return supabaseResponse;

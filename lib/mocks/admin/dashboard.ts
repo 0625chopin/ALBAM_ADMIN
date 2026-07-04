@@ -8,7 +8,11 @@ import type {
   TrendMetric,
   CategoryDistribution,
   SystemStatus,
+  OpsWidgetItem,
 } from "@/lib/types";
+
+// OpsWidgetItem 계약은 lib/types(admin-dashboard)로 이전. 기존 소비처 호환 위해 재노출.
+export type { OpsWidgetItem } from "@/lib/types";
 
 /** KPI 카드 6종+ (오늘=2026-07-04 기준 스냅샷) */
 export const MOCK_DASHBOARD_KPI: DashboardKpi = {
@@ -85,18 +89,6 @@ export const MOCK_SYSTEM_STATUS: SystemStatus = {
   ],
   storageObjectCount: 3412,
 };
-
-/** 운영 위젯 행 (마감임박/자동완료대기/최근신고/최근가입 공통 형태) */
-export interface OpsWidgetItem {
-  /** 행 식별자 */
-  id: string;
-  /** 주 라벨 (상품 제목·회원 닉네임 등) */
-  label: string;
-  /** 부가 정보 (남은 시간·금액·사유 등) */
-  meta: string;
-  /** 클릭 시 이동 경로 (선택) */
-  href?: string;
-}
 
 /** 마감 임박 경매 (남은 시간 오름차순) */
 export const MOCK_CLOSING_AUCTIONS: OpsWidgetItem[] = [

@@ -25,21 +25,21 @@ export type {
   ChatRoom,
   Message,
   Penalty,
+  ReportTargetType,
+  ReportStatus,
+  Report,
 } from "@0625chopin/shared/types";
 
-// 관리자 핵심 엔티티 (admin_users/admin_action_logs/user_suspensions/reports)
+// 관리자 핵심 엔티티 (admin_users/admin_action_logs/user_suspensions)
 export type {
   AdminUser,
   AdminTargetType,
   AdminActionType,
   AdminActionLog,
   UserSuspension,
-  ReportTargetType,
-  ReportStatus,
-  Report,
 } from "./admin";
 
-// 대시보드 파생 (KPI/추이/시스템 상태)
+// 대시보드 파생 (KPI/추이/시스템 상태/운영 위젯)
 export type {
   DashboardKpi,
   TrendMetric,
@@ -47,6 +47,7 @@ export type {
   CategoryDistribution,
   CronJobStatus,
   SystemStatus,
+  OpsWidgetItem,
 } from "./admin-dashboard";
 
 // 모니터링/블라인드 확장 (상품/메시지/평점)

@@ -8,11 +8,14 @@ import {
 import { Badge } from "@0625chopin/shared/ui/badge";
 import { Button } from "@0625chopin/shared/ui/button";
 import { AdminActionDialog } from "@/components/admin";
+import { blindContentAction } from "../_actions/moderation";
 import { MOCK_ADMIN_MESSAGES, maskPii } from "@/lib/mocks/admin";
 import { formatDateTime } from "@/lib/format-admin";
 
 // 채팅 모니터링 (FA070) `3차(선택)` — OPEN-6: 신고 방/메시지 범위 제한 + 마스킹 + 열람 감사.
-// Mock 은 마스킹된 내용만 표시. 원문 열람(감사 기록)은 A5.
+// 정책(확정): 신고된 방/메시지만 조회 · 전화/이메일 자동 마스킹 · 메시지 블라인드는 실동작
+//   (admin_blind_content). 원문 열람 감사·채팅 실데이터 전환(신고 방 로딩)은 차기.
+// ※ 현재 목록은 Mock 행으로, 블라인드 버튼은 실 admin_blind_content 를 호출한다(실데이터 전환 시 실 행에 적용).
 export default function ChatPage() {
   const roomId = MOCK_ADMIN_MESSAGES[0]?.roomId ?? "-";
 
@@ -76,6 +79,8 @@ export default function ChatPage() {
                     description="부적절한 메시지를 숨깁니다(감사/복구 목적)."
                     actionLabel="블라인드"
                     tier={2}
+                    summary={`대상 메시지: ${m.id}`}
+                    onConfirm={blindContentAction.bind(null, "message", m.id)}
                   />
                 )}
               </li>

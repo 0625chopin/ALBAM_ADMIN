@@ -86,3 +86,19 @@ export interface SystemStatus {
   /** Storage 버킷 객체 수 (product-images 등 개요) */
   storageObjectCount: number;
 }
+
+/**
+ * 운영 위젯 행 (마감임박/자동완료대기/최근신고/최근가입 공통 형태)
+ * - PRD_ADMIN: FA012. Mock(lib/mocks/admin/dashboard)과 실 조회(lib/queries/dashboard, TA050)가 공유하는 계약.
+ * - OpsWidget 컴포넌트의 props 원천.
+ */
+export interface OpsWidgetItem {
+  /** 행 식별자 */
+  id: string;
+  /** 주 라벨 (상품 제목·회원 닉네임 등) */
+  label: string;
+  /** 부가 정보 (남은 시간·금액·사유 등) */
+  meta: string;
+  /** 클릭 시 이동 경로 (선택) */
+  href?: string;
+}

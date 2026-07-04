@@ -4,11 +4,17 @@
 
 import type {
   AdminActionType,
-  ReportStatus,
-  ReportTargetType,
   ProductStatus,
   TransactionStatus,
 } from "@/lib/types";
+
+// 신고 라벨(REPORT_REASON/STATUS/TARGET_LABEL)은 @0625chopin/shared/constants 로 이관됨.
+// FO 신고 모달과 BO 처리 큐가 동일 라벨을 공유하기 위함. 기존 import 경로(@/lib/labels-admin)는 유지된다.
+export {
+  REPORT_REASON_LABEL,
+  REPORT_STATUS_LABEL,
+  REPORT_TARGET_LABEL,
+} from "@0625chopin/shared/constants";
 
 /** 경매 상품 상태 라벨 (StatusBadge label 주입용) */
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
@@ -17,6 +23,7 @@ export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
   failed: "유찰",
   withdrawn: "내림",
   completed: "완료",
+  force_closed: "강제종료",
 };
 
 /** 거래 상태 라벨 (StatusBadge label 주입용) */
@@ -71,31 +78,6 @@ export const PENALTY_REASON_LABEL: Record<string, string> = {
   abandon_won: "낙찰 포기",
   withdraw_with_bids: "입찰 중 상품 내림",
   no_show: "약속 불이행",
-};
-
-/** 신고 사유 코드 라벨 (FA050) */
-export const REPORT_REASON_LABEL: Record<string, string> = {
-  fake_info: "허위 상품 정보",
-  abuse: "욕설·비방",
-  no_show: "미거래·약속 불이행",
-  malicious: "악의적 행위",
-  prohibited: "금지 품목",
-};
-
-/** 신고 처리 상태 라벨 */
-export const REPORT_STATUS_LABEL: Record<ReportStatus, string> = {
-  pending: "대기",
-  reviewing: "검토중",
-  resolved: "처리완료",
-  rejected: "반려",
-};
-
-/** 신고 대상 유형 라벨 */
-export const REPORT_TARGET_LABEL: Record<ReportTargetType, string> = {
-  product: "상품",
-  user: "사용자",
-  message: "메시지",
-  rating: "평점",
 };
 
 /** 코드값 라벨 조회 (미정의 시 원본 코드 반환) */

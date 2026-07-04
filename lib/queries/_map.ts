@@ -8,14 +8,14 @@
 import type { Tables } from "@0625chopin/shared/database";
 import type {
   AdminUser,
-  Report,
-  ReportTargetType,
-  ReportStatus,
   AdminActionLog,
   AdminActionType,
   AdminTargetType,
   UserSuspension,
 } from "@/lib/types";
+
+// 신고 매퍼(toReport)는 @0625chopin/shared/queries/map 로 이관됨(FO·BO 단일 소스). 재노출한다.
+export { toReport } from "@0625chopin/shared/queries/map";
 
 /** DB admin_users Row → 도메인 AdminUser (FA001) */
 export function toAdminUser(row: Tables<"admin_users">): AdminUser {
@@ -24,24 +24,6 @@ export function toAdminUser(row: Tables<"admin_users">): AdminUser {
     role: row.role,
     grantedBy: row.granted_by,
     grantedAt: row.granted_at,
-  };
-}
-
-/** DB reports Row → 도메인 Report (FA050~FA052) */
-export function toReport(row: Tables<"reports">): Report {
-  return {
-    id: row.id,
-    reporterId: row.reporter_id,
-    // target_type/status 는 DB text(+CHECK) → 도메인 리터럴 유니온으로 캐스팅(값 집합 동일)
-    targetType: row.target_type as ReportTargetType,
-    targetId: row.target_id,
-    reason: row.reason,
-    detail: row.detail,
-    status: row.status as ReportStatus,
-    handledBy: row.handled_by,
-    resolution: row.resolution,
-    createdAt: row.created_at,
-    handledAt: row.handled_at,
   };
 }
 

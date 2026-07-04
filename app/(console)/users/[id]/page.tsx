@@ -12,7 +12,13 @@ import { LevelBadge } from "@0625chopin/shared/common/level-badge";
 import { StarRating } from "@0625chopin/shared/common/star-rating";
 import { AdminActionDialog } from "@/components/admin";
 import { PagePlaceholder } from "@/components/console/page-placeholder";
-import { getMockMemberDetail } from "@/lib/mocks/admin";
+import { getMemberDetail } from "@/lib/queries/members";
+import {
+  suspendUserAction,
+  liftSuspensionAction,
+  grantPenaltyAction,
+  revokePenaltyAction,
+} from "./_actions";
 import { formatDate, formatDateTime, formatCount } from "@/lib/format-admin";
 import {
   ADMIN_ACTION_LABEL,
@@ -34,15 +40,17 @@ function ActionButtons({ member }: { member: AdminMemberDetail }) {
           description="회원의 로그인·거래 제한을 해제합니다."
           actionLabel="해제"
           summary={`대상: ${member.nickname} (${member.id}) · 정지 → 정상`}
+          onConfirm={liftSuspensionAction.bind(null, member.id)}
         />
       ) : (
         <AdminActionDialog
           trigger={<Button variant="destructive">계정 정지</Button>}
           title="계정 정지"
-          description="기간제 또는 영구 정지. 로그인·거래가 제한됩니다."
+          description="영구 정지 처리합니다. 로그인·거래가 제한됩니다."
           actionLabel="정지"
           destructive
-          summary={`대상: ${member.nickname} (${member.id}) · 정상 → 정지`}
+          summary={`대상: ${member.nickname} (${member.id}) · 정상 → 정지(영구)`}
+          onConfirm={suspendUserAction.bind(null, member.id)}
         />
       )}
       <AdminActionDialog
@@ -51,6 +59,7 @@ function ActionButtons({ member }: { member: AdminMemberDetail }) {
         description="30일 내 3회 누적 시 상품 등록이 제한됩니다 (ISSUE-004)."
         actionLabel="부여"
         summary={`현재 최근 30일 패널티: ${formatCount(member.recentPenaltyCount)}회`}
+        onConfirm={grantPenaltyAction.bind(null, member.id)}
       />
       <AdminActionDialog
         trigger={<Button variant="ghost">관리자 지정</Button>}
@@ -72,7 +81,7 @@ function ActionButtons({ member }: { member: AdminMemberDetail }) {
 
 async function UserDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const member = getMockMemberDetail(id);
+  const member = await getMemberDetail(id);
 
   if (!member) {
     return (
@@ -200,9 +209,23 @@ async function UserDetail({ params }: { params: Promise<{ id: string }> }) {
             <span className="text-foreground">
               {labelOf(PENALTY_REASON_LABEL, p.reason)}
             </span>
-            <span className="text-muted-foreground text-xs">
-              {formatDate(p.createdAt)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs">
+                {formatDate(p.createdAt)}
+              </span>
+              <AdminActionDialog
+                trigger={
+                  <Button variant="ghost" size="sm">
+                    회수
+                  </Button>
+                }
+                title="패널티 회수"
+                description="부여된 패널티를 삭제합니다. 누적 집계에서 제외됩니다."
+                actionLabel="회수"
+                summary={`대상: ${member.nickname} · ${labelOf(PENALTY_REASON_LABEL, p.reason)} (${formatDate(p.createdAt)})`}
+                onConfirm={revokePenaltyAction.bind(null, p.id, member.id)}
+              />
+            </div>
           </li>
         ))}
       </HistoryCard>

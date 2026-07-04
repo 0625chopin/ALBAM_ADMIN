@@ -9,7 +9,7 @@ import {
   CardTitle,
   CardContent,
 } from "@0625chopin/shared/ui/card";
-import type { OpsWidgetItem } from "@/lib/mocks/admin";
+import type { OpsWidgetItem } from "@/lib/types";
 
 export interface OpsWidgetProps {
   /** 위젯 제목 */

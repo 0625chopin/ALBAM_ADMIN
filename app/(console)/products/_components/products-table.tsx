@@ -25,6 +25,7 @@ const STATUS_FILTERS: { value: ProductStatus | "all"; label: string }[] = [
   { value: "completed", label: "완료" },
   { value: "withdrawn", label: "내림" },
   { value: "failed", label: "유찰" },
+  { value: "force_closed", label: "강제종료" },
 ];
 
 export function ProductsTable({ products }: { products: AdminProductRow[] }) {

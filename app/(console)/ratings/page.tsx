@@ -8,9 +8,12 @@ import { Badge } from "@0625chopin/shared/ui/badge";
 import { Button } from "@0625chopin/shared/ui/button";
 import { StarRating } from "@0625chopin/shared/common/star-rating";
 import { AdminActionDialog } from "@/components/admin";
+import { blindContentAction } from "../_actions/moderation";
 import { MOCK_ADMIN_RATINGS } from "@/lib/mocks/admin";
 
-// 악성 평점 처리 (FA080) `3차(선택)` — 삭제/코멘트 블라인드. Mock.
+// 악성 평점 처리 (FA080) `3차(선택)` — 코멘트 블라인드(실동작)/삭제.
+// 코멘트 블라인드는 admin_blind_content('rating') 실 호출. 목록은 Mock 행(실데이터 전환은 차기).
+// 평점 삭제(평판 재계산 연동)는 별도 RPC 필요 — 차기.
 export default function RatingsPage() {
   return (
     <div className="space-y-6 p-6">
@@ -58,6 +61,8 @@ export default function RatingsPage() {
                       description="악성 코멘트를 숨깁니다(별점은 유지)."
                       actionLabel="블라인드"
                       tier={2}
+                      summary={`대상 평점: ${r.id}`}
+                      onConfirm={blindContentAction.bind(null, "rating", r.id)}
                     />
                     <AdminActionDialog
                       trigger={

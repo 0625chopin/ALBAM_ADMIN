@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   Card,
   CardHeader,
@@ -6,9 +7,10 @@ import {
 } from "@0625chopin/shared/ui/card";
 import { Badge } from "@0625chopin/shared/ui/badge";
 import { PolicyEditor } from "./_components/policy-editor";
-import { MOCK_CODE_GROUPS, MOCK_POLICIES } from "@/lib/mocks/admin";
+import { getPolicies, getCodeGroups } from "@/lib/queries/settings";
 
-// 운영 설정 (FA060·FA061) `2차` — 공통코드 + 정책 수치(범위 검증). Mock.
+// 운영 설정 (FA060·FA061) `2차` — 공통코드 + 정책 수치(범위 검증). 실 Supabase 조회(TA056).
+// UI 컴포넌트 무수정, 데이터 소스만 Mock→조회 교체. cacheComponents: 동적 조회는 Suspense 안에서.
 export default function SettingsPage() {
   return (
     <div className="space-y-6 p-6">
@@ -17,19 +19,36 @@ export default function SettingsPage() {
         <Badge variant="outline">2차</Badge>
       </header>
 
+      <Suspense
+        fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
+      >
+        <SettingsData />
+      </Suspense>
+    </div>
+  );
+}
+
+async function SettingsData() {
+  const [policies, codeGroups] = await Promise.all([
+    getPolicies(),
+    getCodeGroups(),
+  ]);
+
+  return (
+    <>
       {/* 정책 수치 (FA061) */}
       <section className="space-y-2">
         <h2 className="text-muted-foreground text-sm font-semibold">
           정책 수치 (범위 검증)
         </h2>
-        <PolicyEditor policies={MOCK_POLICIES} />
+        <PolicyEditor policies={policies} />
       </section>
 
       {/* 공통코드 (FA060) */}
       <section className="space-y-2">
         <h2 className="text-muted-foreground text-sm font-semibold">공통코드</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {MOCK_CODE_GROUPS.map((g) => (
+          {codeGroups.map((g) => (
             <Card key={g.key}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-foreground text-sm font-semibold">
@@ -50,6 +69,6 @@ export default function SettingsPage() {
           ))}
         </div>
       </section>
-    </div>
+    </>
   );
 }

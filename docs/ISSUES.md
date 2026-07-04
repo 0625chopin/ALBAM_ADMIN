@@ -38,6 +38,13 @@
 | ISSUE-021 | 🟢 DONE | 평판   | 평점 제출 시 브라우저 콘솔 `submit_rating` 400 1건 관측(데이터는 정상 저장) | 재제출 멱등 처리(`ON CONFLICT DO NOTHING` no-op) — 롤백 테스트 통과     |
 | ISSUE-022 | 🟢 DONE | 데이터 | 고아 `product_images.url` → Storage 객체 부재로 `/_next/image` 400          | `ProductImage` onError 폴백(카드·갤러리) — 깨진 아이콘 제거             |
 | ISSUE-023 | 🟢 DONE | 경매   | 경매 진행 시간 고정(36h) → 등록자가 12시간/1~7일 선택                       | 폼 Select + `createAuction` 가 `auction_ends_at` 명시 전달 (2026-07-02) |
+| ISSUE-024 | 🟢 DONE | UX(관리자) | 비관리자 로그인 후 `/login?forbidden=1` 리다이렉트 시 안내 메시지 미표시   | A6/TA060 발견 → 로그인 페이지에 `forbidden` 감지 안내 배너(role=alert) 추가 |
+| ISSUE-025 | 🟢 DONE | 인프라(관리자) | 관리자 게이트 `assertAdminAccess`가 Suspense 경계 밖 인증 데이터 접근(dev blocking-route 경고) | A6/TA060 발견 → 게이트를 Suspense 내 `AdminGate` async 로 이동해 해결 |
+| ISSUE-026 | 🟢 DONE | 문서(관리자) | `admin_update_policy` 범위 처리 표기 정정: "클램프" → **범위 밖 거부(raise exception)** | A6/TA063 확인 — 자동완료 RPC(ISSUE-002)는 클램프, 관리자 정책 수정 RPC는 거부 |
+| OPEN-2    | 🟢 DONE | 제재(관리자) | 제재 수단 범위 — 콘텐츠 블라인드/해제·경매 강제 종료 admin RPC 구현             | `admin_blind_content`/`admin_unblind_content`/`admin_force_close_auction` + UI 배선·검증 |
+| OPEN-6    | 🟢 DONE | 개인정보(관리자) | 채팅 열람 정책 확정(신고건 한정·PII 마스킹·원문열람 감사) + 메시지 블라인드 실동작 | 원문열람 감사·채팅/평점 실데이터 전환은 차기 |
+| ISSUE-027 | 🟢 DONE | 경매(관리자) | 경매 강제 종료 의미 변경: '낙찰/유찰 판정' → **유찰(거래 미성립) 무효 종결** | 관리자 강제 종료는 낙찰·거래 생성 없이 `failed`. 자연 만료는 기존대로 낙찰/유찰. **→ ISSUE-028로 승격(유찰→전용 상태 강제종료)** |
+| ISSUE-028 | 🟢 DONE | 경매(BO/FO) | 강제 종료 결과를 **전용 상태 '강제종료(force_closed)'** 로 승격 + BO/FO 전반 표시 | ProductStatus·codes·RPC 확장. 입찰 있으면 취소 거래 생성해 FO /transactions 노출, 입찰 0은 /my-products·BO /products에서 표시 |
 
 ---
 
@@ -217,3 +224,72 @@
 - **원인**: `next.config.ts`의 `images.remotePatterns`(Supabase 호스트 + `/storage/v1/object/public/**`)는 정상. 원본 Storage URL 자체가 400이며, `storage.objects`(bucket `product-images`)가 **0건**으로 확인됨. 즉 `product_images.url` 행은 존재하나 실제 업로드 파일이 없다(과거 로컬 이미지 삭제 커밋 `e299eab` + P6TEST 정리 잔재로 추정되는 고아 데이터). **코드/경로 생성 로직은 정상**(데이터 바인딩·매핑 검증 통과).
 - **해결(2026-07-02)**: `ProductImage` 클라이언트 컴포넌트 신설(`components/common/product-image.tsx`) — `next/image` `onError` 시 `ImagePlaceholder`로 전환. `auction-card` 대표 이미지·`auction-gallery` 대표/썸네일에 적용해 로드 실패 시 깨진 아이콘 대신 그레이스풀 폴백. 신규 업로드 흐름은 실제 파일이 존재하므로 정상.
 - **잔여(참고)**: onError는 UI를 폴백하지만 브라우저는 실패한 원본 요청을 여전히 네트워크 400으로 기록한다(이미지 바이너리 자체가 없기 때문). 현재 `product_images` 5행은 모두 고아 **테스트 데이터**이며, 콘솔 400까지 완전 제거하려면 고아 행 정리(선택)가 필요하다 — 신규 실업로드로 대체되면 자연 소멸.
+
+## ISSUE-024 · 비관리자 forbidden 리다이렉트 안내 메시지 미표시 🟢 DONE
+
+- **배경(A6/TA060)**: 미들웨어(`lib/supabase/proxy.ts`)는 세션은 있으나 `admin_users` 미소속인 사용자를 `/login?forbidden=1`로 리다이렉트한다. 그러나 로그인 화면(`app/(auth)/login/page.tsx`)이 `forbidden` 쿼리 파라미터를 해석하지 않아, 일반 로그인 화면과 동일하게 보였다.
+- **관측**: 비관리자 `chopin0625@gmail.com`으로 로그인 성공(세션 생성됨) → 콘솔 진입 시 `/login?forbidden=1`로 튕기지만 안내가 없어 사용자가 원인을 알기 어려웠다.
+- **해결(2026-07-04)**: 로그인 페이지(client)에 `useEffect`로 `window.location.search`의 `forbidden=1`을 감지하는 `forbidden` 상태 추가 → `role="alert"`·`aria-live="assertive"` 배너("관리자 권한이 없는 계정입니다. 관리자 계정으로 로그인해 주세요.") 표시. 재로그인 시도 시(`handleSubmit`) 배너 해제. `useSearchParams`의 prerender Suspense 요구를 피하려 `window.location` 사용.
+- **검증**: Playwright — 비관리자 로그인 → `/login?forbidden=1` 리다이렉트 시 배너 렌더 확인(스냅샷 `alert` 노드), 스크린샷 `issue024-forbidden-banner.png`. `npm run check-all` exit 0. 가드 동작(차단)은 기존과 동일.
+
+## ISSUE-025 · 관리자 게이트 Suspense 경계 밖 인증 데이터 접근(dev 경고) 🟢 DONE
+
+- **배경(A6/TA060)**: 관리자 콘솔 진입 시 브라우저 콘솔에 dev 경고 1건 관측 — `Route "/": Uncached data or connection() was accessed outside of <Suspense>`. 발생 지점은 콘솔 레이아웃의 관리자 게이트 `assertAdminAccess`(`lib/auth/admin-gate.ts`) → `ConsoleLayout`.
+- **원인**: `ConsoleLayout`이 최상위에서 `await assertAdminAccess()`(내부 `is_admin` RPC = 쿠키/connection 의존 uncached data)를 호출해 Suspense 경계 밖에서 라우트 전체 렌더를 블로킹(ISSUE-011과 동일 계열 패턴, `cacheComponents` 환경).
+- **해결(2026-07-04)**: `ConsoleLayout`을 **동기 셸**로 전환하고, 게이트 `await`를 Suspense 경계 안 async 컴포넌트 `AdminGate`로 이동. `AdminGate`가 `assertAdminAccess()` 후 비관리자면 `redirect("/login")`, 통과 시 `children` 렌더 — 심층 방어(defense-in-depth)와 보안 게이팅은 그대로 유지하되 셸 prerender는 더 이상 블로킹되지 않는다. 사이드바(`usePathname`)와 동일한 Suspense 패턴.
+- **검증**: Playwright 관리자 로그인 후 `/`(대시보드)·`/users/[id]`(동적) 콘솔 에러 0(blocking-route 경고 제거, favicon 404 무관 잔존). `npm run typecheck`·`check-all` exit 0. 미들웨어(1차 가드)+AdminGate(심층 방어) 이중 차단 유지.
+
+## ISSUE-026 · 정책 범위 처리 표기 정정(클램프 → 거부) 🟢 DONE
+
+- **배경(A6/TA063)**: ROADMAP_ADMIN의 TA032/TA056/TA063이 관리자 정책 수정을 "범위 검증 클램프 안내"로 기술했으나, 실제 `admin_update_policy(p_code, p_num_value, p_reason)` 정의는 허용 범위를 벗어난 값을 **클램프하지 않고 `raise exception`으로 거부**한다.
+- **확인(정의 조회)**: `auto_complete_wait_hours∈[24,168]`, `penalty_restriction_threshold∈[1,10]`, `penalty_window_days∈[7,90]`, `min_bid_increment∈[100,100000]`, `default_auction_duration_hours∈[12,336]`. 범위 밖이면 `'정책 값이 허용 범위(%~%)를 벗어났습니다'` 예외.
+- **구분(중요)**: 자동완료 실행 RPC `auto_complete_transactions`는 조회값을 `greatest(24, least(168, ...))`로 **클램프**(ISSUE-002)하지만, 이는 운영자 입력이 아닌 런타임 방어다. 관리자가 값을 **수정**하는 경로(`admin_update_policy`)는 잘못된 입력을 **거부**하는 것이 맞다(감사·의도 명확). 따라서 동작은 정상이며 **문서 표현만 "범위 밖 거부"로 정정**한다.
+- **검증(TA063)**: `admin_update_policy('auto_complete_wait_hours', 200)`·`(…, 12)` → 예외 거부, 경계값 `24`/`168` → 성공. 테스트 후 원래값(25) 원복.
+
+## OPEN-2 · 제재 수단 범위(콘텐츠 블라인드/경매 강제 종료) 🟢 DONE
+
+- **배경**: 관리자 제재 수단 중 1차(정지·패널티·강제 내림/취소)는 A5에서 구현됐으나, 2차 수단인 **콘텐츠 블라인드**와 **경매 강제 종료**는 보류(TA054 ◐)였다.
+- **결정(2026-07-04, 사용자)**: 두 수단 모두 채택·구현.
+- **반영(마이그레이션 `admin_open2_blind_force_close`)**:
+  - `admin_blind_content(p_target_type, p_target_id, p_reason)` / `admin_unblind_content(...)` — `products`/`messages`/`ratings.is_blinded` 토글(상태·삭제와 구분). 공통 계약(_require_admin→전이→`admin_action_logs`), `action_type='blind_content'`+`meta{blinded:true|false}`(복구도 동일 타입). `protect_products_is_blinded` 트리거는 `is_admin()=true`로 통과.
+  - `admin_force_close_auction(p_product_id, p_reason)` — active 경매만, `bids` 최고입찰 있으면 `_award_auction`(won+거래(pending)/채팅방 생성)+낙찰 bid `won`, 없으면 `failed`. `action_type='force_close_auction'`+`meta{previousStatus,result,winnerId,finalPrice}`. 만료 전 즉시 종결.
+  - 전부 `SECURITY DEFINER`·`search_path=''`, `anon/public` EXECUTE 회수·`authenticated` 부여. 타입 재생성 → `@0625chopin/shared/src/database.ts` Functions 3종 반영(+node_modules 동기화).
+  - UI 배선(컴포넌트 무수정): 공용 `app/(console)/_actions/moderation.ts`(blind/unblind) + `products/[id]/_actions.ts`(force_close). 상품 상세(블라인드↔해제 토글·강제 종료), 채팅(메시지 블라인드), 평점(코멘트 블라인드) `onConfirm` 실 action 연결.
+- **검증**: `[ADMINTEST_OPEN2]` 격리 — 관리자 롤 blind/unblind(product/message/rating) is_blinded true/false, force_close 입찰有→won(+거래·채팅방)/입찰無→failed, 감사로그 8건. 비-admin 3종 `permission denied`. orphan 0, advisor security/performance ERROR 0, `check-all` EXIT 0.
+
+## OPEN-6 · 채팅 메시지 열람 개인정보 정책 🟢 DONE(정책 확정 + 블라인드 실동작)
+
+- **배경**: 채팅 모니터링(FA070)에서 개인 대화 열람 범위·개인정보 보호 정책이 미결정(🔴)이었다.
+- **결정(2026-07-04, 사용자)**:
+  - **범위 제한**: 신고된 채팅방/메시지만 조회 대상.
+  - **PII 마스킹**: 전화번호·이메일 등은 자동 마스킹(`maskPii`)하여 표시.
+  - **원문 열람**: 마스킹 해제(원문) 열람은 **열람 감사 기록 후** 제공(차기 구현).
+  - **블라인드**: 부적절 메시지는 `admin_blind_content('message', …)`로 **실동작** 블라인드(감사/복구).
+- **반영(이번)**: 채팅 페이지 정책 안내 문구 확정 + 메시지 블라인드 버튼을 실 `blindContentAction('message', id)`에 연결(OPEN-2 RPC 공유). 평점 코멘트 블라인드도 `blindContentAction('rating', id)` 연결.
+- **차기(범위 밖, 명시)**: ① 원문 열람 감사 RPC(누가·언제·어떤 방/메시지 열람), ② 채팅/평점 페이지 실데이터 전환(신고된 방/메시지 로딩) — 현재 목록은 Mock 행이라 블라인드 실행은 실데이터 전환 시 실 행에 적용된다(RPC 자체는 실 행으로 검증 완료, OPEN-2 참조).
+
+## ISSUE-027 · 경매 강제 종료 의미 변경(낙찰/유찰 판정 → 유찰 무효 종결) 🟢 DONE
+
+> **후속(2026-07-04)**: 이 "유찰 재사용" 결정은 **ISSUE-028로 승격**되어, 강제 종료 결과가 유찰(failed)이 아니라 전용 상태 **강제종료(force_closed)** 로 바뀌었다. 아래 내용은 중간 단계의 기록이며 최신 동작은 ISSUE-028 참조.
+
+- **배경**: 초기 `admin_force_close_auction`은 자연 만료(`close_expired_auctions`) 로직을 재사용해 **입찰 있으면 낙찰(won)+거래(pending)/채팅방 생성**, 없으면 유찰(failed)로 처리했다. 그 결과 관리자가 경매를 강제 종료해도 낙찰자와 **진행중 거래**가 남았다.
+- **결정(2026-07-04, 사용자)**: 관리자 **경매 강제 종료**는 "판매 미성립으로 완전 종결"을 의미한다. → **상품 `유찰(failed)`, 낙찰자 없음(winner_id=null), 거래·채팅방 미생성.** (상품 상태에 '취소' 값이 없어 기존 `failed`(유찰) 재사용 — 스키마·공개앱 무영향.)
+- **반영(마이그레이션 `admin_force_close_auction_void`)**: RPC 재정의 — `active`만 허용, 최고 입찰은 **감사 기록용**으로만 조회, `products.status='failed'`+`winner_id=null`, `_award_auction` 호출 제거(거래/채팅방 생성 안 함). 감사 로그 `force_close_auction` meta`{previousStatus:'active', result:'failed', wouldBeWinnerId, wouldBeAmount}`. UI 다이얼로그 문구도 "즉시 유찰 처리(거래 미성립·낙찰 없음)"로 수정.
+- **구분(중요)**: **자연 만료**(`close_expired_auctions`, pg_cron)는 **그대로 낙찰/유찰 판정 유지** — 정상 거래 흐름. 오직 **관리자 강제 종료만** 유찰로 무효 종결한다.
+- **검증**: `[ADMINTEST]` 활성 상품+입찰 → 강제 종료 → 상품 `failed`·winner null·거래/채팅방 0·감사 wouldBeWinner 기록. 비-admin `permission denied`. non-active 예외. UI에서 강제 종료 시 상태 배지 `경매중 → 유찰` in-place 반영. `check-all` EXIT 0, advisor ERROR 0. 기존 잔재(상품 f74b17f4→유찰·winner 제거, 거래 dc5b4577→취소, 입찰 되돌림, 고아 채팅방 삭제)도 정리.
+- **주의(트레이드오프)**: 이 동작은 기존 **강제 내림(FA031, → withdrawn/내림)** 과 결과가 거의 동일해졌다(라벨/의도만 차이: 유찰 vs 내림). 두 조치 모두 유지하며, 향후 통합 검토 여지.
+
+## ISSUE-028 · 강제종료(force_closed) 전용 상태 승격 + BO/FO 전반 표시 🟢 DONE
+
+- **배경**: ISSUE-027에서 강제 종료 결과를 유찰(failed)로 재사용했으나, 유찰(입찰 없이 마감)과 **관리자 강제 종료**를 구분해야 한다는 요구. 또한 강제 종료 건을 FO에서도 추적하고 싶다는 요구(사용자: "676 강제종료 후 /transactions에 안 나오는 이유"). 원인: 강제 종료가 유찰+거래 미생성이라 /transactions(거래 목록)에 노출되지 않았고, 입찰 0건(예: 676)은 상대방이 없어 거래 자체가 성립 불가.
+- **결정(2026-07-04, 사용자)**: 전용 상태값 **'강제종료(force_closed)'** 를 공통코드에 신규 추가하고, **BO `/products`** 와 **FO `/transactions`·`/my-products`** 에서 "강제종료"로 표시.
+- **반영**:
+  - **DB(마이그레이션 `admin_add_force_closed_status`)**: `products_status_check`에 `force_closed` 추가; `codes` insert(`product_status/force_closed/강제종료/sort_order 6`); `admin_force_close_auction` 재정의 — `active`만 허용 → `products.status='force_closed'`·`winner_id=null`, **최고 입찰자 있으면** `transactions`(buyer=최고입찰자, `status='canceled'`, `ended_at=now`) 생성(채팅방 미생성)해 /transactions 노출, 입찰 0이면 거래 미생성. 감사 meta`{previousStatus, result:'force_closed', wouldBeWinnerId, wouldBeAmount, transactionId}`. `database.ts` 무변경(status는 string).
+  - **Shared(`@0625chopin/shared`)**: `types/product.ts` `ProductStatus`에 `"force_closed"`; `common/status-badge.tsx` `PRODUCT_STATUS_VARIANT`에 `force_closed:"destructive"`. **install-links 물리 복사본이라 양 앱(albam-admin·start-kit-nextjs) node_modules 재동기화 필수.**
+  - **BO(albam-admin)**: `lib/labels-admin.ts` `PRODUCT_STATUS_LABEL`에 `force_closed:"강제종료"`; 상품 목록 필터(`products-table.tsx`)에 "강제종료" 옵션.
+  - **FO(start-kit-nextjs)**: 라벨은 `codes.product_status` 런타임 자동; `MOCK_PRODUCT_STATUS_LABELS`·홈/내상품 `STATUS_HEADINGS`·`VALID_STATUS`·`auction-status-filter` `STATUS_ORDER`에 force_closed; 거래 카드 판정을 `failed||force_closed`로 확장(유찰/강제종료 상품 상태 배지 표시); `canChat`·`auction-info` 종료 배너에 force_closed 포함.
+- **동작 정리**:
+  - **입찰 있던** 강제 종료: 취소 거래 생성 → 구매자·판매자 **FO /transactions에 "강제종료"** 표시.
+  - **입찰 0건**(예: 676): 거래 불가 → **FO /my-products·BO /products에서 "강제종료"** 표시(/transactions 불가 — 상대방 없음).
+- **검증**: RPC `[ADMINTEST]`(입찰有→force_closed+취소거래 1, 입찰無→force_closed+거래0)·비-admin 거부; 676→강제종료·f74b17f4 재매핑(failed→force_closed); BO·FO `check-all` EXIT 0; advisor security ERROR 0; Playwright FO /my-products("강제종료" 필터·676 배지)·/transactions(강제종료 표시, 유찰과 구분) 확인.
+- **주의**: shared 변경은 양 앱 재동기화 필요(배지 색상은 Turbopack 캐시로 dev 재시작 시 완전 반영, 라벨은 즉시). 강제종료는 기존 강제 내림(withdrawn)과 별개 상태로 공존.
