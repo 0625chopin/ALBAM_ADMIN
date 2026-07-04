@@ -2,7 +2,7 @@
 
 > 회원·상품·거래·신고를 모니터링하고, 제재/강제 조치로 어뷰징·분쟁에 대응하며, 정책 수치를 운영 중 조정하는 **운영자 콘솔**.
 
-**상태: 진행중** · 작성일: 2026-07-04 · A-1(분리 인프라) 완료 · **A0~A3 완료(TA001~TA033) · 🏁 마일스톤 AM1 달성(관리자 화면 완성)** · 다음 A4(DB 설계 & RLS → AM2)
+**상태: 진행중** · 작성일: 2026-07-04 · A-1(분리 인프라) 완료 · **A0~A4 완료(TA001~TA043) · 🏁 AM1 달성** · 다음 A5(실데이터 전환·admin RPC → 마일스톤 AM2)
 
 > **🔀 분리 방침 확정 (2026-07-04)**: 관리자 콘솔은 일반 사이트와 **분리된 별도 앱/배포**로 구축한다. 목적: 보안 격리·독립 배포·운영 편의. 따라서 본 로드맵의 "같은 앱 `app/admin/**` 라우트 그룹" 전제는 **별도 앱(예: `apps/admin`) 전제로 대체**되며, 아래 사항이 추가된다:
 >
@@ -250,23 +250,25 @@
 
 | Task  | 상태  | 작업                                                  | 의존성       | 관련 기능         | 리스크(OPEN)      |
 | ----- | ----- | ----------------------------------------------------- | ------------ | ----------------- | ----------------- |
-| TA040 | - [ ] | 신규 테이블 마이그레이션 + 타입 재생성 ⭐             | AM1          | FA001/FA002/FA050 | 🔴 OPEN-3, OPEN-4 |
-| TA041 | - [ ] | 블라인드 플래그 컬럼 추가 (products/messages/ratings) | TA040        | FA031/FA070/FA080 | 🔴 OPEN-2         |
-| TA042 | - [ ] | RLS 정책 + `is_admin()` 헬퍼 + FK 커버링 인덱스       | TA040        | FA001             | -                 |
-| TA043 | - [ ] | security/performance advisor 점검 (ERROR 0)           | TA041, TA042 | -                 | -                 |
+| TA040 | ✅    | 신규 테이블 마이그레이션 + 타입 재생성 ⭐             | AM1          | FA001/FA002/FA050 | 🟢 OPEN-3, OPEN-4 |
+| TA041 | ✅    | 블라인드 플래그 컬럼 추가 (products/messages/ratings) | TA040        | FA031/FA070/FA080 | 🟢 OPEN-2*        |
+| TA042 | ✅    | RLS 정책 + `is_admin()` 헬퍼 + FK 커버링 인덱스       | TA040        | FA001             | -                 |
+| TA043 | ✅    | security/performance advisor 점검 (ERROR 0)           | TA041, TA042 | -                 | -                 |
 
-- **TA040 세부 — 신규 테이블(PRD_ADMIN "🗄️ 데이터 모델")**
-  - [ ] `admin_users`(user_id PK→profiles.id, role text 기본 `admin`, granted_by nullable, granted_at) — FA001
-  - [ ] `reports`(id/reporter_id/target_type/target_id/reason/detail/status/handled_by/resolution/created_at/handled_at) — FA050~FA052 🔴 OPEN-1
-  - [ ] `admin_action_logs`(id/admin_id/action_type/target_type/target_id/reason/meta jsonb/created_at) — FA002 🔴 OPEN-3
-  - [ ] `user_suspensions`(id/user_id/reason/suspended_by/starts_at/ends_at nullable/lifted_at) — FA022 🔴 OPEN-4(별도 테이블 vs `profiles.suspended_until` 컬럼)
-  - [ ] `generate_typescript_types`로 `lib/database.types.ts` 재생성 → `lib/types/admin*`와 1:1 정합 확인, `lib/queries/_map.ts` 매퍼 추가(snake↔camel)
-- **TA041 세부 — 블라인드 플래그**: `products.is_blinded`·`messages.is_blinded`·`ratings.is_blinded`(기본 false) 추가 — 삭제와 구분(감사/복구 목적). 🔴 OPEN-2에 따라 채택 범위 조정(1차는 강제 내림 우선, 블라인드 2차 가능)
-- **TA042 세부 — RLS/헬퍼/인덱스**
-  - [ ] `is_admin()` SQL 헬퍼(`(select auth.uid())` in `admin_users`), `search_path=''`
-  - [ ] 신규 4개 테이블 RLS 활성화: **관리자만 조회/수정**. 단 `reports`는 예외적으로 **신고자 본인 insert 허용**(FA050)
-  - [ ] FK 커버링 인덱스(reports.reporter_id/handled_by, admin_action_logs.admin_id, user_suspensions.user_id/suspended_by 등) — ISSUE-019 패턴, `unindexed_foreign_keys` 0
-- **TA043 세부**: 신규 테이블 `rls_enabled=true`, security advisor RLS Disabled ERROR 0, performance advisor unindexed FK ERROR 0(WARN/INFO만 허용)
+- **TA040 세부 — 신규 테이블(PRD_ADMIN "🗄️ 데이터 모델")** — 마이그레이션 `admin_a4_core_tables`·`admin_a4_reports_logs`
+  - [x] `admin_users`(user_id PK→profiles.id, role text 기본 `admin`, granted_by nullable, granted_at) — FA001
+  - [x] `reports`(id/reporter_id/target_type/target_id/reason/detail/status/handled_by/resolution/created_at/handled_at) — FA050~FA052 (text+CHECK, target_id 폴리모픽)
+  - [x] `admin_action_logs`(id/admin_id RESTRICT/action_type/target_type/target_id/reason/meta jsonb/created_at) — FA002, 불변(update/delete 정책 없음)
+  - [x] `user_suspensions`(id/user_id/reason/suspended_by RESTRICT/starts_at/ends_at nullable=영구/lifted_at) — FA022
+  - [x] `generate_typescript_types` → **`@0625chopin/shared/src/database.ts` 재생성**(분리 재해석, 로컬 `lib/database.types.ts` 아님) → `lib/types/admin*`와 tsc 1:1 정합 확인, admin **`lib/queries/_map.ts`** 순수 매퍼 4종(snake↔camel)
+- **TA041 세부 — 블라인드 플래그** (`admin_a4_blind_flags`): `products.is_blinded`·`messages.is_blinded`·`ratings.is_blinded`(boolean not null default false) 추가 — 삭제와 구분. OPEN-2*: 컬럼 3종 전부 추가(무해), 사용(강제내림/블라인드 RPC)은 A5(TA054)
+- **TA042 세부 — RLS/헬퍼/인덱스** (`admin_a4_rls`·`admin_a4_fk_indexes`·`admin_a4_is_admin_revoke_anon`)
+  - [x] `is_admin()` SQL 헬퍼(SECURITY DEFINER, `search_path=''`, STABLE) + anon EXECUTE 회수(get_policy_int 하드닝 표준)
+  - [x] 신규 4개 테이블 RLS 활성화: **관리자만 조회/수정**. `reports`는 **신고자 본인 insert 허용**(FA050). products/messages/ratings 블라인드 관리자 UPDATE 정책 + products `is_blinded` 보호 트리거(판매자 변경 차단)
+  - [x] FK 커버링 인덱스(reports.reporter_id/handled_by, admin_action_logs.admin_id, user_suspensions.user_id/suspended_by, admin_users.granted_by + 조회 패턴) — ISSUE-019 패턴, `unindexed_foreign_keys` 0
+- **TA043 세부**: 신규 테이블 `rls_enabled=true`, security advisor RLS Disabled/anon SECURITY DEFINER ERROR 0, performance advisor unindexed FK ERROR 0(WARN/INFO만: products 복수 permissive UPDATE 정책·미사용 인덱스는 허용). RLS 실효 스모크(관리자 uid 조회 가능/비관리자 uid 0행) 통과, 부트스트랩(0625chopin@gmail.com) admin_users INSERT 완료
+
+> ✅ **A4 완료(2026-07-04, TA040~TA043)**: 원격 Supabase(`zmeyfvfkqnemnzafpzmn`)에 마이그레이션 6종 적용 — `admin_a4_core_tables`(admin_users/user_suspensions)·`admin_a4_reports_logs`(reports/admin_action_logs)·`admin_a4_blind_flags`(products/messages/ratings.is_blinded)·`admin_a4_rls`(is_admin()+4테이블 RLS+블라인드 정책+products 트리거)·`admin_a4_fk_indexes`·`admin_a4_is_admin_revoke_anon`. 타입 재생성→`@0625chopin/shared/src/database.ts` 반영(shared v0.1.2)→admin 재동기화→`lib/queries/_map.ts` 매퍼 4종, `check-all` 통과. 부트스트랩 관리자(알밤이3/0625chopin@gmail.com) 등록. **advisor security/performance ERROR 0**, RLS 실효 스모크 통과. **⏳ 후속: (1) shared 레포(database.ts·version) 커밋, (2) 마이그레이션은 원격 DB에만 존재(로컬 SQL 파일 없음 원칙). 다음: A5(실데이터 전환·admin RPC 9종·미들웨어 실연결) → AM2.**
 
 ---
 
@@ -330,10 +332,10 @@
 | A1    | 타입 & 라우트 골격         | TA010~TA012     | 3       | 3    | ✅ 완료    |
 | A2    | Mock UI 구현               | TA020~TA027     | 8       | 8    | ✅ 완료    |
 | A3    | 상태 화면 & 조치 인터랙션  | TA030~TA033     | 4       | 4    | ✅ 완료    |
-| A4    | DB 설계 & RLS              | TA040~TA043     | 4       | 0    | ⬜ 착수 전 |
+| A4    | DB 설계 & RLS              | TA040~TA043     | 4       | 4    | ✅ 완료    |
 | A5    | 실데이터 전환 & admin 조치 | TA050~TA058     | 9       | 0    | ⬜ 착수 전 |
 | A6    | 통합 테스트 & 품질         | TA060~TA064     | 5       | 0    | ⬜ 착수 전 |
-| —     | **관리자 콘솔 합계**       | **TA001~TA064** | **35**  | 17   | 🟢 진행중  |
+| —     | **관리자 콘솔 합계**       | **TA001~TA064** | **35**  | 21   | 🟢 진행중  |
 
 ## 🏁 마일스톤 개요
 
