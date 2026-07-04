@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,8 +14,8 @@ import {
   Star,
   BarChart3,
   LogOut,
-  Menu,
-  X,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
 import { cn } from "@0625chopin/shared/utils";
 import { createClient } from "@0625chopin/shared/supabase/client";
@@ -33,44 +33,40 @@ const NAV = [
   { href: "/analytics", label: "심화 통계", icon: BarChart3, tier: 3 },
 ] as const;
 
+// BO(관리자 콘솔)는 PC 전용. 모바일 반응형 분기 없이, 기본 펼침 사이드바 +
+// 접기/펼치기 토글(더 넓은 작업 공간 확보). 인-플로우(콘텐츠를 옆으로 밀어냄).
 export function AdminSidebar() {
   const pathname = usePathname();
-  // 모바일 펼침 상태(접힘=아이콘 바, 펼침=전체 메뉴). 데스크톱은 항상 전체 표시라 무관.
-  const [open, setOpen] = useState(false);
-
-  // 라우트 이동 시 모바일 메뉴 자동 접기
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  // 라벨/브랜드 표시 여부: 모바일은 open 일 때만, 데스크톱(md)은 항상.
-  const labelCls = (base: string) =>
-    cn(base, open ? "inline" : "hidden", "md:inline");
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    // 인-플로우 사이드바: 콘텐츠를 덮지 않고 옆으로 밀어낸다(오버레이 아님).
-    // 모바일 접힘 w-14(아이콘 바) ↔ 펼침 w-60, 데스크톱 항상 w-60.
     <aside
       className={cn(
-        "bg-sidebar text-sidebar-foreground border-sidebar-border flex h-screen shrink-0 flex-col border-r transition-[width] duration-200 md:w-60",
-        open ? "w-60" : "w-14"
+        "bg-sidebar text-sidebar-foreground border-sidebar-border flex h-screen shrink-0 flex-col border-r transition-[width] duration-200",
+        collapsed ? "w-16" : "w-60"
       )}
     >
-      {/* 헤더: 햄버거 토글(모바일 전용) + 브랜드 */}
-      <div className="border-sidebar-border flex h-14 items-center gap-2 border-b px-2 md:px-4">
+      {/* 헤더: 접기/펼치기 토글 + 브랜드 */}
+      <div className="border-sidebar-border flex h-14 items-center gap-2 border-b px-2">
         <button
           type="button"
-          aria-label={open ? "메뉴 접기" : "메뉴 펼치기"}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 rounded-md p-2 transition-colors md:hidden"
+          aria-label={collapsed ? "메뉴 펼치기" : "메뉴 접기"}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed((v) => !v)}
+          className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 rounded-md p-2 transition-colors"
         >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          {collapsed ? (
+            <PanelLeft className="size-5" />
+          ) : (
+            <PanelLeftClose className="size-5" />
+          )}
         </button>
-        <span className={cn("items-center gap-2", open ? "flex" : "hidden", "md:flex")}>
-          <span className="text-lg">🛡️</span>
-          <span className="font-bold whitespace-nowrap">알밤마켓 관리자</span>
-        </span>
+        {!collapsed && (
+          <span className="flex items-center gap-2 overflow-hidden">
+            <span className="text-lg">🛡️</span>
+            <span className="font-bold whitespace-nowrap">알밤마켓 관리자</span>
+          </span>
+        )}
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-2">
@@ -81,24 +77,21 @@ export function AdminSidebar() {
             <Link
               key={href}
               href={href}
-              title={label}
+              title={collapsed ? label : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                open ? "justify-start" : "justify-center",
-                "md:justify-start",
+                collapsed ? "justify-center" : "justify-start",
                 active
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <Icon className="size-4 shrink-0" />
-              <span className={labelCls("whitespace-nowrap")}>{label}</span>
-              {tier > 1 && (
-                <span
-                  className={labelCls(
-                    "text-sidebar-foreground/50 ml-auto text-[10px]"
-                  )}
-                >
+              {!collapsed && (
+                <span className="whitespace-nowrap">{label}</span>
+              )}
+              {!collapsed && tier > 1 && (
+                <span className="text-sidebar-foreground/50 ml-auto text-[10px]">
                   {tier}차
                 </span>
               )}
@@ -107,32 +100,27 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      <div className="border-sidebar-border space-y-2 border-t p-2 md:p-3">
+      <div className="border-sidebar-border space-y-2 border-t p-2">
         <button
           type="button"
-          title="로그아웃"
+          title={collapsed ? "로그아웃" : undefined}
           onClick={async () => {
             await createClient().auth.signOut();
             window.location.assign("/login");
           }}
           className={cn(
             "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-            open ? "justify-start" : "justify-center",
-            "md:justify-start"
+            collapsed ? "justify-center" : "justify-start"
           )}
         >
           <LogOut className="size-4 shrink-0" />
-          <span className={labelCls("whitespace-nowrap")}>로그아웃</span>
+          {!collapsed && <span className="whitespace-nowrap">로그아웃</span>}
         </button>
-        <p
-          className={cn(
-            "text-sidebar-foreground/60 px-3 text-xs whitespace-nowrap",
-            open ? "block" : "hidden",
-            "md:block"
-          )}
-        >
-          알밤마켓 운영자 콘솔
-        </p>
+        {!collapsed && (
+          <p className="text-sidebar-foreground/60 px-3 text-xs whitespace-nowrap">
+            알밤마켓 운영자 콘솔
+          </p>
+        )}
       </div>
     </aside>
   );

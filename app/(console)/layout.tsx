@@ -22,11 +22,11 @@ export default async function ConsoleLayout({
     <div className="bg-background text-foreground flex min-h-screen">
       {/* AdminSidebar 는 usePathname()(동적)을 쓰므로 Suspense 경계 안에 둔다.
           동적 라우트(/products/[id] 등) 셸 prerender 차단 방지 — ISSUE-011 패턴.
-          사이드바는 인-플로우(콘텐츠를 밀어냄, 오버레이 아님). 모바일 접힘 w-14 ↔ 펼침 w-60, 데스크톱 w-60.
-          fallback 은 레이아웃 시프트 방지를 위해 접힘 폭(w-14, md:w-60) 유지. */}
+          BO는 PC 전용: 기본 펼침 사이드바(w-60), 접기 시 w-16. 인-플로우(콘텐츠를 밀어냄).
+          fallback 은 레이아웃 시프트 방지를 위해 기본 펼침 폭(w-60) 유지. */}
       <Suspense
         fallback={
-          <div className="bg-sidebar border-sidebar-border h-screen w-14 shrink-0 border-r md:w-60" />
+          <div className="bg-sidebar border-sidebar-border h-screen w-60 shrink-0 border-r" />
         }
       >
         <AdminSidebar />
