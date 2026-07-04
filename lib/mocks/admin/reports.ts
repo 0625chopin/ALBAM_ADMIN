@@ -1,0 +1,73 @@
+// 신고 Mock 데이터 (FA050~FA052) — 신고 2차, 타입 선반영(OPEN-1 결정)
+// Report 단일 계약. 실 Supabase 전환 시 조회부만 교체. 처리 큐 UI는 TA025(2차).
+
+import type { Report } from "@/lib/types";
+
+/** 신고 목록 (미처리 pending 상단, 처리완료/반려 하단) */
+export const MOCK_REPORTS: Report[] = [
+  {
+    id: "r_5001",
+    reporterId: "u_1004",
+    targetType: "product",
+    targetId: "p_2001",
+    reason: "fake_info",
+    detail: "실제 사진과 다른 상품입니다. 액정 파손 미고지.",
+    status: "pending",
+    handledBy: null,
+    resolution: null,
+    createdAt: "2026-07-04T14:55:00+09:00",
+    handledAt: null,
+  },
+  {
+    id: "r_5002",
+    reporterId: "u_1008",
+    targetType: "message",
+    targetId: "m_9012",
+    reason: "abuse",
+    detail: "거래 중 욕설을 반복했습니다.",
+    status: "pending",
+    handledBy: null,
+    resolution: null,
+    createdAt: "2026-07-04T14:38:00+09:00",
+    handledAt: null,
+  },
+  {
+    id: "r_5003",
+    reporterId: "u_1002",
+    targetType: "user",
+    targetId: "u_1007",
+    reason: "no_show",
+    detail: null,
+    status: "reviewing",
+    handledBy: "u_1001",
+    resolution: null,
+    createdAt: "2026-07-04T13:20:00+09:00",
+    handledAt: null,
+  },
+  {
+    id: "r_5004",
+    reporterId: "u_1005",
+    targetType: "rating",
+    targetId: "rt_7003",
+    reason: "malicious",
+    detail: "허위 별점 테러입니다.",
+    status: "resolved",
+    handledBy: "u_1001",
+    resolution: "평점 블라인드 처리",
+    createdAt: "2026-07-03T09:10:00+09:00",
+    handledAt: "2026-07-03T11:40:00+09:00",
+  },
+  {
+    id: "r_5005",
+    reporterId: "u_1003",
+    targetType: "product",
+    targetId: "p_2014",
+    reason: "prohibited",
+    detail: "금지 품목 의심",
+    status: "rejected",
+    handledBy: "u_1005",
+    resolution: "정상 상품으로 확인, 반려",
+    createdAt: "2026-07-02T16:00:00+09:00",
+    handledAt: "2026-07-02T17:25:00+09:00",
+  },
+];
