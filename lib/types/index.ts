@@ -56,3 +56,10 @@ export type {
   AdminRatingView,
   BlindTargetType,
 } from "./admin-moderation";
+
+// 목록/상세 화면용 파생 뷰 (회원 행·상세, 거래 행)
+export type {
+  AdminMemberRow,
+  AdminMemberDetail,
+  AdminTransactionRow,
+} from "./admin-views";

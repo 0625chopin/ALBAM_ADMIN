@@ -123,16 +123,16 @@
 > 📌 A0는 **개념·계약·부트스트랩 설계** 단계다. 실제 스키마 마이그레이션은 Phase A4(TA040), 미들웨어 실연결은 Phase A5(TA057)에서 수행한다(Mock First 순서 유지).
 
 - **TA001 세부 — 관리자 판별 방식(1차 선행)** (PRD_ADMIN "결정된 권한 판별 방식")
-  - [ ] 관리자 판별을 **별도 `admin_users` 테이블**로 확정(`profiles`에 `role`/`is_admin` 컬럼 **추가하지 않음**)
-  - [ ] `admin_users` 개념 컬럼 확정: `user_id`(PK, → `profiles.id`) · `role`(text 기본 `admin`, 다단계 확장 여지 🔴 OPEN-5) · `granted_by`(→ `profiles.id`, nullable) · `granted_at`(timestamptz)
-  - [ ] **최초 관리자 부트스트랩** 절차 문서화: Supabase MCP `execute_sql`로 대상 `profiles.id`를 `admin_users`에 직접 INSERT(`granted_by=NULL`, `role='admin'`). 이후는 FA023(관리자 지정)로 관리
-  - [ ] 테스트 계정(chopin0625/0625chopin) 중 1명을 부트스트랩 관리자로 지정하는 시나리오 정의
-  - [ ] `createAdminClient()`(service_role) 재사용 범위 확정 — 강제/제재 mutation 한정, **클라이언트 번들 노출 절대 금지**
+  - [x] 관리자 판별을 **별도 `admin_users` 테이블**로 확정(`profiles`에 `role`/`is_admin` 컬럼 **추가하지 않음**)
+  - [x] `admin_users` 개념 컬럼 확정: `user_id`(PK, → `profiles.id`) · `role`(text 기본 `admin`, 다단계 확장 여지 🔴 OPEN-5) · `granted_by`(→ `profiles.id`, nullable) · `granted_at`(timestamptz)
+  - [x] **최초 관리자 부트스트랩** 절차 문서화: Supabase MCP `execute_sql`로 대상 `profiles.id`를 `admin_users`에 직접 INSERT(`granted_by=NULL`, `role='admin'`). 이후는 FA023(관리자 지정)로 관리
+  - [x] 테스트 계정(chopin0625/0625chopin) 중 1명을 부트스트랩 관리자로 지정하는 시나리오 정의 (0625chopin 지정)
+  - [x] `createAdminClient()`(service_role) 재사용 범위 확정 — 강제/제재 mutation 한정, **클라이언트 번들 노출 절대 금지**
 - **TA002 세부 — 3중 가드 계약(1차 선행)** (PRD_ADMIN "접근 통제 계층")
-  - [ ] **미들웨어 가드**(루트 `proxy.ts`) 계약: 세션 유무 + `admin_users` 소속 여부 판정, 비관리자는 홈(또는 404) 리다이렉트. `createServerClient`~`getClaims` 사이 코드 삽입 금지·`supabaseResponse` 반환 규칙(CLAUDE.md) 준수
-  - [ ] **RLS 정책** 계약: `is_admin()` SQL 헬퍼(`auth.uid()` in `admin_users`) 설계, 관리자 전용 테이블은 관리자만 조회/수정
-  - [ ] **RPC 권한 검증** 계약: 모든 admin RPC 내부에서 `admin_users` 확인 후 실행, 위반 시 예외 → **① 권한검증 → ② 상태전이 → ③ 감사로그 적재**를 단일 트랜잭션으로 (FA002)
-  - [ ] 참고 라우트 모델(`app/my-products/page.tsx` 로그인 게이트) 위에 **관리자 게이트**를 얹는 구조 확정
+  - [x] **미들웨어 가드**(루트 `proxy.ts`) 계약: 세션 유무 + `admin_users` 소속 여부 판정, 비관리자는 홈(또는 404) 리다이렉트. `createServerClient`~`getClaims` 사이 코드 삽입 금지·`supabaseResponse` 반환 규칙(CLAUDE.md) 준수
+  - [x] **RLS 정책** 계약: `is_admin()` SQL 헬퍼(`auth.uid()` in `admin_users`) 설계, 관리자 전용 테이블은 관리자만 조회/수정
+  - [x] **RPC 권한 검증** 계약: 모든 admin RPC 내부에서 `admin_users` 확인 후 실행, 위반 시 예외 → **① 권한검증 → ② 상태전이 → ③ 감사로그 적재**를 단일 트랜잭션으로 (FA002)
+  - [x] 참고 라우트 모델(`app/my-products/page.tsx` 로그인 게이트) 위에 **관리자 게이트**를 얹는 구조 확정
 
 ---
 
@@ -148,22 +148,22 @@
 
 > ✅ **A1 완료(2026-07-04)**: 타입 `lib/types/{admin,admin-dashboard,admin-moderation}.ts`+barrel(`index.ts`). 라우트는 admin 레포 재해석대로 **무접두 `app/(console)/**`**(users/products/transactions+[id], reports/settings, chat/ratings/analytics). 게이트 `lib/auth/admin-gate.ts`(Mock 임시통과, 실게이팅 TA057). `next build`(동적 3종 ◐ PPR)+`check-all` 통과, Playwright 로그인·네비·동적 id 검증.
 
-- **TA010 세부 — 단일 타입 계약(camelCase, PRD_ADMIN "🗄️ 데이터 모델" 1:1 매핑)**
-  - [ ] `AdminUser`(userId/role/grantedBy/grantedAt) — FA001/FA023
-  - [ ] `Report`(id/reporterId/targetType(`product`/`user`/`message`/`rating`)/targetId/reason/detail/status(`pending`/`reviewing`/`resolved`/`rejected`)/handledBy/resolution/createdAt/handledAt) — FA050~FA052
-  - [ ] `AdminActionLog`(id/adminId/actionType(`suspend_user`/`force_withdraw`/`force_cancel_tx`/`grant_penalty`/`update_policy` 등)/targetType/targetId/reason/meta(jsonb)/createdAt) — FA002
-  - [ ] `UserSuspension`(id/userId/reason/suspendedBy/startsAt/endsAt(영구는 NULL)/liftedAt) — FA022 (구현방식 🔴 OPEN-4)
-  - [ ] 블라인드 플래그 타입 확장: `Product.isBlinded`·`Message.isBlinded`·`Rating.isBlinded`(기본 false) — FA031/FA070/FA080
-  - [ ] 대시보드 파생 타입: `DashboardKpi`(총회원/진행중경매/오늘신규(가입·경매·입찰·거래)/거래완료율/미처리신고/제재중회원) · `TrendPoint`(일별 추이) · `SystemStatus`(cron 잡·Storage) — FA010~FA013
-- **TA011 세부 — 라우트 골격**(PRD_ADMIN "📱 메뉴 구조", placeholder + async params await)
-  - [ ] 1차: `app/admin/page.tsx`(대시보드) · `app/admin/users/page.tsx`·`app/admin/users/[id]/page.tsx` · `app/admin/products/page.tsx`·`app/admin/products/[id]/page.tsx` · `app/admin/transactions/page.tsx`·`app/admin/transactions/[id]/page.tsx`
-  - [ ] 2차: `app/admin/reports/page.tsx` · `app/admin/settings/page.tsx`
-  - [ ] 3차(선택): `app/admin/chat/page.tsx`(FA070) · `app/admin/ratings/page.tsx`(FA080) · `app/admin/analytics/page.tsx`(FA090)
-  - [ ] `next build` 통과 확인(동적 라우트 Partial Prerender 처리)
+- **TA010 세부 — 단일 타입 계약(camelCase, PRD_ADMIN "🗄️ 데이터 모델" 1:1 매핑)** — 산출물 `lib/types/{admin,admin-dashboard,admin-moderation,admin-views}.ts`+barrel `index.ts`
+  - [x] `AdminUser`(userId/role/grantedBy/grantedAt) — FA001/FA023
+  - [x] `Report`(id/reporterId/targetType(`product`/`user`/`message`/`rating`)/targetId/reason/detail/status(`pending`/`reviewing`/`resolved`/`rejected`)/handledBy/resolution/createdAt/handledAt) — FA050~FA052
+  - [x] `AdminActionLog`(id/adminId/actionType(`suspend_user`/`force_withdraw`/`force_cancel_tx`/`grant_penalty`/`update_policy` 등)/targetType/targetId/reason/meta(jsonb)/createdAt) — FA002
+  - [x] `UserSuspension`(id/userId/reason/suspendedBy/startsAt/endsAt(영구는 NULL)/liftedAt) — FA022 (구현방식 🔴 OPEN-4)
+  - [x] 블라인드 플래그 타입 확장: `AdminProductRow`/`AdminMessageView`/`AdminRatingView`의 `isBlinded`(기본 false) — FA031/FA070/FA080
+  - [x] 대시보드 파생 타입: `DashboardKpi`(총회원/진행중경매/오늘신규(가입·경매·입찰·거래)/거래완료율/미처리신고/제재중회원) · `TrendPoint`(일별 추이) · `SystemStatus`(cron 잡·Storage) — FA010~FA013
+- **TA011 세부 — 라우트 골격**(PRD_ADMIN "📱 메뉴 구조", placeholder + async params await) — **A-1 분리 재해석: 무접두 `app/(console)/**`**(라인 103·149)
+  - [x] 1차: `app/(console)/page.tsx`(대시보드) · `app/(console)/users/page.tsx`·`app/(console)/users/[id]/page.tsx` · `app/(console)/products/page.tsx`·`app/(console)/products/[id]/page.tsx` · `app/(console)/transactions/page.tsx`·`app/(console)/transactions/[id]/page.tsx`
+  - [x] 2차: `app/(console)/reports/page.tsx` · `app/(console)/settings/page.tsx`
+  - [x] 3차(선택): `app/(console)/chat/page.tsx`(FA070) · `app/(console)/ratings/page.tsx`(FA080) · `app/(console)/analytics/page.tsx`(FA090)
+  - [x] `next build` 통과 확인(동적 `[id]` 3종 Partial Prerender ◐: users/products/transactions)
 - **TA012 세부 — 관리자 게이트 레이아웃**
-  - [ ] `app/admin/layout.tsx`: 관리자 게이트(Mock 단계는 임시 통과 플래그) + 사이드바 네비(📊 대시보드/👥 회원/📦 상품·경매/💳 거래/🚨 신고·제재/⚙️ 운영설정 + 선택 3종)
-  - [ ] `/admin` 진입 시 메뉴 간 네비게이션 이동 흐름 Playwright 검증
-  - [ ] 시맨틱 색상 변수/`cn()`/다크모드 정합 점검
+  - [x] `app/(console)/layout.tsx`: 관리자 게이트(`lib/auth/admin-gate.ts` `assertAdminAccess`, Mock 임시 통과) + `AdminSidebar` 네비(📊 대시보드/👥 회원/📦 상품·경매/💳 거래/🚨 신고·제재/⚙️ 운영설정 + 선택 3종)
+  - [x] 콘솔 진입 시 메뉴 간 네비게이션 이동 흐름 Playwright 검증(로그인 세션·동적 `[id]` placeholder 렌더 포함)
+  - [x] 시맨틱 색상 변수/`cn()`/다크모드 정합 점검
 
 ---
 
