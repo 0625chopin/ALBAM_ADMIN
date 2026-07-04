@@ -35,109 +35,105 @@ const NAV = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  // 모바일 햄버거 드로어 열림 상태 (데스크톱은 항상 표시라 무관)
+  // 모바일 펼침 상태(접힘=아이콘 바, 펼침=전체 메뉴). 데스크톱은 항상 전체 표시라 무관.
   const [open, setOpen] = useState(false);
 
-  // 라우트 이동 시 모바일 드로어 자동 닫기
+  // 라우트 이동 시 모바일 메뉴 자동 접기
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
+  // 라벨/브랜드 표시 여부: 모바일은 open 일 때만, 데스크톱(md)은 항상.
+  const labelCls = (base: string) =>
+    cn(base, open ? "inline" : "hidden", "md:inline");
+
   return (
-    <>
-      {/* 모바일 상단 바 + 햄버거 (데스크톱은 숨김) */}
-      <header className="bg-sidebar text-sidebar-foreground border-sidebar-border fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 border-b px-3 md:hidden">
+    // 인-플로우 사이드바: 콘텐츠를 덮지 않고 옆으로 밀어낸다(오버레이 아님).
+    // 모바일 접힘 w-14(아이콘 바) ↔ 펼침 w-60, 데스크톱 항상 w-60.
+    <aside
+      className={cn(
+        "bg-sidebar text-sidebar-foreground border-sidebar-border flex h-screen shrink-0 flex-col border-r transition-[width] duration-200 md:w-60",
+        open ? "w-60" : "w-14"
+      )}
+    >
+      {/* 헤더: 햄버거 토글(모바일 전용) + 브랜드 */}
+      <div className="border-sidebar-border flex h-14 items-center gap-2 border-b px-2 md:px-4">
         <button
           type="button"
-          aria-label="메뉴 열기"
+          aria-label={open ? "메뉴 접기" : "메뉴 펼치기"}
           aria-expanded={open}
-          aria-controls="admin-sidebar-drawer"
-          onClick={() => setOpen(true)}
-          className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md p-2 transition-colors"
+          onClick={() => setOpen((v) => !v)}
+          className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 rounded-md p-2 transition-colors md:hidden"
         >
-          <Menu className="size-5" />
+          {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
-        <span className="text-lg">🛡️</span>
-        <span className="font-bold">알밤마켓 관리자</span>
-      </header>
+        <span className={cn("items-center gap-2", open ? "flex" : "hidden", "md:flex")}>
+          <span className="text-lg">🛡️</span>
+          <span className="font-bold whitespace-nowrap">알밤마켓 관리자</span>
+        </span>
+      </div>
 
-      {/* 모바일 드로어 백드롭 */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+        {NAV.map(({ href, label, icon: Icon, tier }) => {
+          const active =
+            href === "/" ? pathname === "/" : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              title={label}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                open ? "justify-start" : "justify-center",
+                "md:justify-start",
+                active
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <Icon className="size-4 shrink-0" />
+              <span className={labelCls("whitespace-nowrap")}>{label}</span>
+              {tier > 1 && (
+                <span
+                  className={labelCls(
+                    "text-sidebar-foreground/50 ml-auto text-[10px]"
+                  )}
+                >
+                  {tier}차
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
-      {/* 사이드바: 데스크톱 정적(w-60) / 모바일 슬라이드인 드로어(w-64) */}
-      <aside
-        id="admin-sidebar-drawer"
-        className={cn(
-          // 데스크톱: 정적 사이드바(항상 flex). 모바일: 고정 오버레이 드로어(열림 시 flex, 닫힘 시 hidden).
-          "bg-sidebar text-sidebar-foreground border-sidebar-border fixed inset-y-0 left-0 z-50 h-screen w-64 shrink-0 flex-col border-r md:static md:z-auto md:w-60",
-          open ? "flex" : "hidden md:flex"
-        )}
-      >
-        <div className="border-sidebar-border flex h-14 items-center justify-between gap-2 border-b px-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🛡️</span>
-            <span className="font-bold">알밤마켓 관리자</span>
-          </div>
-          {/* 모바일 닫기 버튼 */}
-          <button
-            type="button"
-            aria-label="메뉴 닫기"
-            onClick={() => setOpen(false)}
-            className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md p-1 transition-colors md:hidden"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
-          {NAV.map(({ href, label, icon: Icon, tier }) => {
-            const active =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon className="size-4 shrink-0" />
-                <span>{label}</span>
-                {tier > 1 && (
-                  <span className="text-sidebar-foreground/50 ml-auto text-[10px]">
-                    {tier}차
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="border-sidebar-border space-y-2 border-t p-3">
-          <button
-            type="button"
-            onClick={async () => {
-              await createClient().auth.signOut();
-              window.location.assign("/login");
-            }}
-            className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
-          >
-            <LogOut className="size-4 shrink-0" />
-            <span>로그아웃</span>
-          </button>
-          <p className="text-sidebar-foreground/60 px-3 text-xs">
-            알밤마켓 운영자 콘솔
-          </p>
-        </div>
-      </aside>
-    </>
+      <div className="border-sidebar-border space-y-2 border-t p-2 md:p-3">
+        <button
+          type="button"
+          title="로그아웃"
+          onClick={async () => {
+            await createClient().auth.signOut();
+            window.location.assign("/login");
+          }}
+          className={cn(
+            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+            open ? "justify-start" : "justify-center",
+            "md:justify-start"
+          )}
+        >
+          <LogOut className="size-4 shrink-0" />
+          <span className={labelCls("whitespace-nowrap")}>로그아웃</span>
+        </button>
+        <p
+          className={cn(
+            "text-sidebar-foreground/60 px-3 text-xs whitespace-nowrap",
+            open ? "block" : "hidden",
+            "md:block"
+          )}
+        >
+          알밤마켓 운영자 콘솔
+        </p>
+      </div>
+    </aside>
   );
 }
