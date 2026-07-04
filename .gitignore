@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+build
+*.log
+.DS_Store
+.env
+.env.*
+.env*.local
+!.env.example
+.vercel
+
+# Playwright MCP 산출물(스크린샷/콘솔 로그)
+.playwright-mcp/

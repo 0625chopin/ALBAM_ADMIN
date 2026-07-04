@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@0625chopin/shared/styles.css";
+
+/* 공유 패키지 컴포넌트의 Tailwind 클래스 스캔 (node_modules는 기본 제외되므로 명시)
+   소비는 소스(src)를 transpilePackages로 컴파일하므로 src를 스캔한다. */
+@source "../node_modules/@0625chopin/shared/src";
