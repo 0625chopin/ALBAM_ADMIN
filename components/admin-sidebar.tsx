@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@0625chopin/shared/utils";
 import { createClient } from "@0625chopin/shared/supabase/client";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // PRD_ADMIN 메뉴 구조 (FA010~FA090). admin 앱 루트가 콘솔이므로 경로는 app/** 기준.
 const NAV = [
@@ -101,6 +102,7 @@ export function AdminSidebar() {
       </nav>
 
       <div className="border-sidebar-border space-y-2 border-t p-2">
+        <ThemeToggle collapsed={collapsed} />
         <button
           type="button"
           title={collapsed ? "로그아웃" : undefined}
