@@ -132,3 +132,8 @@ export const MOCK_ADMIN_PRODUCTS: AdminProductRow[] = [
     reportCount: 0,
   },
 ];
+
+/** 단일 상품 조회 (미존재 id 는 null) */
+export function getMockProduct(id: string): AdminProductRow | null {
+  return MOCK_ADMIN_PRODUCTS.find((p) => p.id === id) ?? null;
+}

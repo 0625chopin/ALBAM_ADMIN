@@ -6,7 +6,47 @@ import type {
   AdminActionType,
   ReportStatus,
   ReportTargetType,
+  ProductStatus,
+  TransactionStatus,
 } from "@/lib/types";
+
+/** 경매 상품 상태 라벨 (StatusBadge label 주입용) */
+export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
+  active: "경매중",
+  won: "낙찰",
+  failed: "유찰",
+  withdrawn: "내림",
+  completed: "완료",
+};
+
+/** 거래 상태 라벨 (StatusBadge label 주입용) */
+export const TRANSACTION_STATUS_LABEL: Record<TransactionStatus, string> = {
+  pending: "진행중",
+  completed: "거래완료",
+  auto_completed: "자동완료",
+  canceled: "취소",
+};
+
+/** 상품 상태(컨디션) 라벨 */
+export const CONDITION_LABEL: Record<string, string> = {
+  new: "새 상품",
+  used_best: "거의 새것",
+  used_good: "상태 좋음",
+  used_fair: "사용감 있음",
+  used_poor: "하자 있음",
+};
+
+/** 상품 카테고리 라벨 */
+export const CATEGORY_LABEL: Record<string, string> = {
+  digital: "디지털/가전",
+  appliance: "가전",
+  fashion: "패션/의류",
+  furniture: "가구/인테리어",
+  sports: "스포츠/레저",
+  hobby: "취미/게임",
+  beauty: "뷰티/미용",
+  etc: "기타",
+};
 
 /** 관리자 조치 유형 라벨 (감사 로그 표시) — FA002 */
 export const ADMIN_ACTION_LABEL: Record<AdminActionType, string> = {

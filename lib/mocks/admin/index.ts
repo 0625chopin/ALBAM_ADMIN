@@ -6,7 +6,7 @@
 export { MOCK_MEMBERS, getMockMemberDetail } from "./members";
 
 // 상품·경매 (FA030/FA031)
-export { MOCK_ADMIN_PRODUCTS } from "./products";
+export { MOCK_ADMIN_PRODUCTS, getMockProduct } from "./products";
 
 // 대시보드 집계 (FA010~FA013)
 export {
