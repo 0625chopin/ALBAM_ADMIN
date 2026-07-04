@@ -62,4 +62,5 @@ export type {
   AdminMemberRow,
   AdminMemberDetail,
   AdminTransactionRow,
+  AdminTransactionDetail,
 } from "./admin-views";

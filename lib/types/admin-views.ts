@@ -79,3 +79,16 @@ export interface AdminTransactionRow {
   /** 거래 생성 시각 (ISO 8601, 낙찰 성립 시점) */
   createdAt: string;
 }
+
+/**
+ * 거래 상세 (FA041) — 목록 행 + 분쟁·진행 이력
+ * - 강제 취소/완료 조치 및 자동완료(24h) 추적 뷰의 데이터 계약
+ */
+export interface AdminTransactionDetail extends AdminTransactionRow {
+  /** 분쟁 사유 (신고/이의 제기). 정상 거래는 null */
+  disputeReason: string | null;
+  /** 자동완료 예정 시각 (pending, 24h 규칙). 해당 없으면 null */
+  autoCompleteAt: string | null;
+  /** 거래 진행 이력 (낙찰→완료/취소) 최신순 */
+  timeline: { at: string; label: string }[];
+}
