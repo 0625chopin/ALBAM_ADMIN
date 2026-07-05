@@ -9,6 +9,7 @@ import {
 import { Badge } from "@0625chopin/shared/ui/badge";
 import { ReportsQueue } from "./_components/reports-queue";
 import { getReports, getRecentSuspensions } from "@/lib/queries/reports";
+import { fetchReasonLabels } from "@/lib/queries/codes";
 import { formatDate } from "@/lib/format-admin";
 
 // 신고·제재 (FA050~FA052) — 실 Supabase 조회(TA056). UI 컴포넌트 무수정, 데이터 소스만 Mock→조회 교체.
@@ -33,9 +34,10 @@ export default function ReportsPage() {
 
 // 조회부: 신고 큐 + 제재 이력을 병렬 조회 후 표현 컴포넌트에 주입.
 async function ReportsData() {
-  const [reports, suspensions] = await Promise.all([
+  const [reports, suspensions, reasonLabels] = await Promise.all([
     getReports(),
     getRecentSuspensions(),
+    fetchReasonLabels(),
   ]);
 
   return (
@@ -45,7 +47,7 @@ async function ReportsData() {
         <h2 className="text-muted-foreground text-sm font-semibold">
           신고 처리 큐
         </h2>
-        <ReportsQueue reports={reports} />
+        <ReportsQueue reports={reports} reasonLabels={reasonLabels} />
       </section>
 
       {/* 제재 이력 (FA052) — 신고→제재 연결, 회원별 누적 */}

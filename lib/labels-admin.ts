@@ -8,10 +8,10 @@ import type {
   TransactionStatus,
 } from "@/lib/types";
 
-// 신고 라벨(REPORT_REASON/STATUS/TARGET_LABEL)은 @0625chopin/shared/constants 로 이관됨.
-// FO 신고 모달과 BO 처리 큐가 동일 라벨을 공유하기 위함. 기존 import 경로(@/lib/labels-admin)는 유지된다.
+// 신고 사유(reason)는 공통코드(codes.report_reason)로 통일 — lib/queries/codes.ts 의 fetchReasonLabels()로
+// 서버에서 조회해 주입한다(FO 신고 모달과 단일 소스). 하드코딩 REPORT_REASON_LABEL 은 제거.
+// 상태(status)/대상(target)은 앱 레벨 enum 이라 상수 라벨을 shared/constants 에서 재노출한다.
 export {
-  REPORT_REASON_LABEL,
   REPORT_STATUS_LABEL,
   REPORT_TARGET_LABEL,
 } from "@0625chopin/shared/constants";

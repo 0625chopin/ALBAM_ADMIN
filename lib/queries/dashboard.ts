@@ -15,11 +15,8 @@ import type {
   OpsWidgetItem,
 } from "@/lib/types";
 import { formatTimeUntil, formatRelativeTime } from "@/lib/format-admin";
-import {
-  REPORT_TARGET_LABEL,
-  REPORT_REASON_LABEL,
-  labelOf,
-} from "@/lib/labels-admin";
+import { REPORT_TARGET_LABEL, labelOf } from "@/lib/labels-admin";
+import { fetchReasonLabels } from "./codes";
 import type { ReportTargetType } from "@/lib/types";
 
 /** 대시보드 운영 위젯 4종 묶음 (OpsWidget props 원천) */
@@ -101,6 +98,8 @@ export async function getDashboardOps(): Promise<DashboardOps> {
   const { data, error } = await supabase.rpc("get_admin_dashboard_ops");
   if (error) throw error;
   const raw = data as unknown as RawOps;
+  // 신고 사유 라벨은 공통코드(codes.report_reason)에서 조회 — FO 신고 모달과 단일 소스.
+  const reasonLabels = await fetchReasonLabels();
   return {
     closingAuctions: (raw.closingAuctions ?? []).map((a) => ({
       id: a.id,
@@ -116,7 +115,7 @@ export async function getDashboardOps(): Promise<DashboardOps> {
     })),
     recentReports: (raw.recentReports ?? []).map((r) => ({
       id: r.id,
-      label: labelOf(REPORT_REASON_LABEL, r.reason),
+      label: labelOf(reasonLabels, r.reason),
       meta: `${formatRelativeTime(r.createdAt)} · ${labelOf(REPORT_TARGET_LABEL, r.targetType)}`,
       href: "/reports",
     })),
