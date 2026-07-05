@@ -8,7 +8,11 @@ import Link from "next/link";
 import { Input } from "@0625chopin/shared/ui/input";
 import { Button } from "@0625chopin/shared/ui/button";
 import { StatusBadge } from "@0625chopin/shared/common/status-badge";
-import { AdminTable, type AdminTableColumn } from "@/components/admin";
+import {
+  AdminTable,
+  ProductIdCell,
+  type AdminTableColumn,
+} from "@/components/admin";
 import { formatCount, formatDate } from "@/lib/format-admin";
 import { TRANSACTION_STATUS_LABEL } from "@/lib/labels-admin";
 import type { AdminTransactionRow, TransactionStatus } from "@/lib/types";
@@ -54,6 +58,11 @@ export function TransactionsTable({
           {t.productTitle}
         </Link>
       ),
+    },
+    {
+      key: "productId",
+      header: "상품 UID",
+      render: (t) => <ProductIdCell id={t.productId} />,
     },
     {
       key: "sellerNickname",

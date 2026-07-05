@@ -9,7 +9,11 @@ import { Input } from "@0625chopin/shared/ui/input";
 import { Button } from "@0625chopin/shared/ui/button";
 import { Badge } from "@0625chopin/shared/ui/badge";
 import { StatusBadge } from "@0625chopin/shared/common/status-badge";
-import { AdminTable, type AdminTableColumn } from "@/components/admin";
+import {
+  AdminTable,
+  ProductIdCell,
+  type AdminTableColumn,
+} from "@/components/admin";
 import { formatCount } from "@/lib/format-admin";
 import {
   PRODUCT_STATUS_LABEL,
@@ -62,6 +66,11 @@ export function ProductsTable({ products }: { products: AdminProductRow[] }) {
           {p.isBlinded && <Badge variant="outline">블라인드</Badge>}
         </div>
       ),
+    },
+    {
+      key: "id",
+      header: "상품 UID",
+      render: (p) => <ProductIdCell id={p.id} />,
     },
     {
       key: "sellerNickname",

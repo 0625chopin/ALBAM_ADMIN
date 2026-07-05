@@ -13,6 +13,7 @@ import type { Penalty } from "@0625chopin/shared/types";
 export const MOCK_MEMBERS: AdminMemberRow[] = [
   {
     id: "u_1001",
+    email: "chopin.market@example.com",
     nickname: "쇼팽마켓",
     region: "서울 강남구",
     sellerLevel: 4,
@@ -24,6 +25,7 @@ export const MOCK_MEMBERS: AdminMemberRow[] = [
   },
   {
     id: "u_1002",
+    email: "kim.used.king@example.com",
     nickname: "중고왕김씨",
     region: "경기 성남시",
     sellerLevel: 2,
@@ -35,6 +37,7 @@ export const MOCK_MEMBERS: AdminMemberRow[] = [
   },
   {
     id: "u_1003",
+    email: "busan.seagull@example.com",
     nickname: "부산갈매기",
     region: "부산 해운대구",
     sellerLevel: 3,
@@ -46,6 +49,7 @@ export const MOCK_MEMBERS: AdminMemberRow[] = [
   },
   {
     id: "u_1004",
+    email: "smart.spender@example.com",
     nickname: "알뜰소비러",
     region: "인천 연수구",
     sellerLevel: 1,
@@ -57,6 +61,7 @@ export const MOCK_MEMBERS: AdminMemberRow[] = [
   },
   {
     id: "u_1005",
+    email: "retro.collector@example.com",
     nickname: "레트로수집가",
     region: "대구 수성구",
     sellerLevel: 5,
@@ -68,6 +73,7 @@ export const MOCK_MEMBERS: AdminMemberRow[] = [
   },
   {
     id: "u_1006",
+    email: "sprout.seller@example.com",
     nickname: "새싹판매자",
     region: "광주 서구",
     sellerLevel: 1,
@@ -79,6 +85,7 @@ export const MOCK_MEMBERS: AdminMemberRow[] = [
   },
   {
     id: "u_1007",
+    email: "trouble.maker@example.com",
     nickname: "분쟁유발자",
     region: "서울 마포구",
     sellerLevel: 2,
@@ -90,6 +97,7 @@ export const MOCK_MEMBERS: AdminMemberRow[] = [
   },
   {
     id: "u_1008",
+    email: "honest.trader@example.com",
     nickname: "성실거래러",
     region: "대전 유성구",
     sellerLevel: 3,

@@ -18,3 +18,7 @@ export type { TrendChartProps, TrendSeries } from "./trend-chart";
 
 export { AdminActionDialog } from "./admin-action-dialog";
 export type { AdminActionDialogProps } from "./admin-action-dialog";
+
+export { ProductIdCell } from "./product-id-cell";
+
+export { ProductInfoCard } from "./product-info-card";

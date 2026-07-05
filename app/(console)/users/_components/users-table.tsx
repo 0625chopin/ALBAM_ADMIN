@@ -25,12 +25,25 @@ export function UsersTable({ members }: { members: AdminMemberRow[] }) {
       return (
         m.nickname.toLowerCase().includes(q) ||
         m.id.toLowerCase().includes(q) ||
+        m.email.toLowerCase().includes(q) ||
         m.region.toLowerCase().includes(q)
       );
     });
   }, [members, query, suspendedOnly]);
 
   const columns: AdminTableColumn<AdminMemberRow>[] = [
+    {
+      key: "id",
+      header: "회원ID",
+      render: (m) => (
+        <span
+          className="text-muted-foreground font-mono text-xs"
+          title={m.id}
+        >
+          {m.id}
+        </span>
+      ),
+    },
     {
       key: "nickname",
       header: "닉네임",
@@ -42,6 +55,12 @@ export function UsersTable({ members }: { members: AdminMemberRow[] }) {
           {m.nickname}
         </Link>
       ),
+    },
+    {
+      key: "email",
+      header: "이메일",
+      className: "text-muted-foreground",
+      render: (m) => <span className="text-xs">{m.email}</span>,
     },
     { key: "region", header: "지역", className: "text-muted-foreground" },
     {
@@ -95,7 +114,7 @@ export function UsersTable({ members }: { members: AdminMemberRow[] }) {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="닉네임 · ID · 지역 검색"
+          placeholder="닉네임 · ID · 이메일 · 지역 검색"
           className="max-w-xs"
         />
         <Button

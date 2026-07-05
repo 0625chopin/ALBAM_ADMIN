@@ -4,8 +4,8 @@
 // 공유 도메인 매퍼(toProduct) 재사용 + 관리자 파생(isBlinded/reportCount/sellerNickname) 조립.
 
 import { createClient } from "@0625chopin/shared/supabase/server";
-import { toProduct } from "@0625chopin/shared/queries/map";
-import type { AdminProductRow } from "@/lib/types";
+import { toProduct, toProductImage } from "@0625chopin/shared/queries/map";
+import type { AdminProductRow, ProductImage } from "@/lib/types";
 
 const UNKNOWN_SELLER = "이름 없음";
 
@@ -72,4 +72,19 @@ export async function getProductDetail(
     reportCount: count ?? 0,
     sellerNickname: seller?.nickname ?? UNKNOWN_SELLER,
   };
+}
+
+/** 상품 이미지 목록 (product_images, public read) — 대표(is_primary) 우선, 등록순 */
+export async function getProductImages(
+  productId: string
+): Promise<ProductImage[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, product_id, url, is_primary")
+    .eq("product_id", productId)
+    .order("is_primary", { ascending: false })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(toProductImage);
 }

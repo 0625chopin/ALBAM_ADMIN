@@ -13,6 +13,8 @@ import type { UserSuspension, AdminActionLog } from "./admin";
 export interface AdminMemberRow {
   /** 회원 식별자 (profiles.id) */
   id: string;
+  /** 로그인 이메일 (auth.users.email) */
+  email: string;
   /** 닉네임 */
   nickname: string;
   /** 직거래 지역 */
