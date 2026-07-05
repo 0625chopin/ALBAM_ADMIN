@@ -11,7 +11,7 @@
     "check-all": "npm run lint && npm run typecheck"
   },
   "dependencies": {
-    "@0625chopin/shared": "file:../almbam-shared",
+    "@0625chopin/shared": "github:0625chopin/ALBAM_SHARED#main",
     "@supabase/ssr": "0.12.0",
     "@supabase/supabase-js": "2.108.2",
     "lucide-react": "0.511.0",
