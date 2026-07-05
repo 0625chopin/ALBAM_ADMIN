@@ -66,12 +66,4 @@ export const MOCK_ADMIN_RATINGS: AdminRatingView[] = [
   },
 ];
 
-/**
- * 개인정보 마스킹 (OPEN-6) — 전화번호/이메일 등 노출 방지.
- * 실 열람은 신고 방/메시지 범위 제한 + 열람 감사 후 원문 노출(A5).
- */
-export function maskPii(text: string): string {
-  return text
-    .replace(/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/g, "010-****-****")
-    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "***@***");
-}
+// 개인정보 마스킹 유틸(maskPii)은 Mock 의존 제거를 위해 `lib/pii.ts`로 이전됨.

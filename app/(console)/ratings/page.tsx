@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   Card,
   CardHeader,
@@ -9,11 +10,12 @@ import { Button } from "@0625chopin/shared/ui/button";
 import { StarRating } from "@0625chopin/shared/common/star-rating";
 import { AdminActionDialog } from "@/components/admin";
 import { blindContentAction } from "../_actions/moderation";
-import { MOCK_ADMIN_RATINGS } from "@/lib/mocks/admin";
+import { getFlaggedRatings } from "@/lib/queries/ratings";
 
 // 악성 평점 처리 (FA080) `3차(선택)` — 코멘트 블라인드(실동작)/삭제.
-// 코멘트 블라인드는 admin_blind_content('rating') 실 호출. 목록은 Mock 행(실데이터 전환은 차기).
-// 평점 삭제(평판 재계산 연동)는 별도 RPC 필요 — 차기.
+// 실 Supabase 조회(FA080): 신고된 평점 + 블라인드된 평점. UI 컴포넌트 무수정, 데이터 소스만 Mock→조회 교체.
+// 코멘트 블라인드는 admin_blind_content('rating') 실 호출. 평점 삭제(평판 재계산)는 별도 RPC 필요 — 차기.
+// cacheComponents: 동적(쿠키 기반) 조회는 Suspense 안 async 자식에서 수행.
 export default function RatingsPage() {
   return (
     <div className="space-y-6 p-6">
@@ -22,15 +24,34 @@ export default function RatingsPage() {
         <Badge variant="outline">3차</Badge>
       </header>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-foreground text-sm font-semibold">
-            신고·악성 의심 평점
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Suspense
+        fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
+      >
+        <RatingsData />
+      </Suspense>
+    </div>
+  );
+}
+
+// 조회부: 신고·악성 의심 평점 목록을 실데이터로 조회 후 표현.
+async function RatingsData() {
+  const ratings = await getFlaggedRatings();
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-foreground text-sm font-semibold">
+          신고·악성 의심 평점
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {ratings.length === 0 ? (
+          <p className="text-muted-foreground py-2 text-sm">
+            신고·악성 의심 평점이 없습니다.
+          </p>
+        ) : (
           <ul className="divide-border divide-y">
-            {MOCK_ADMIN_RATINGS.map((r) => (
+            {ratings.map((r) => (
               <li
                 key={r.id}
                 className="flex flex-wrap items-center justify-between gap-3 py-3"
@@ -81,8 +102,8 @@ export default function RatingsPage() {
               </li>
             ))}
           </ul>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
