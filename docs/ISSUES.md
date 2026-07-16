@@ -45,6 +45,7 @@
 | OPEN-6    | 🟢 DONE | 개인정보(관리자) | 채팅 열람 정책 확정(신고건 한정·PII 마스킹·원문열람 감사) + 메시지 블라인드 실동작 | 원문열람 감사·채팅/평점 실데이터 전환은 차기 |
 | ISSUE-027 | 🟢 DONE | 경매(관리자) | 경매 강제 종료 의미 변경: '낙찰/유찰 판정' → **유찰(거래 미성립) 무효 종결** | 관리자 강제 종료는 낙찰·거래 생성 없이 `failed`. 자연 만료는 기존대로 낙찰/유찰. **→ ISSUE-028로 승격(유찰→전용 상태 강제종료)** |
 | ISSUE-028 | 🟢 DONE | 경매(BO/FO) | 강제 종료 결과를 **전용 상태 '강제종료(force_closed)'** 로 승격 + BO/FO 전반 표시 | ProductStatus·codes·RPC 확장. 입찰 있으면 취소 거래 생성해 FO /transactions 노출, 입찰 0은 /my-products·BO /products에서 표시 |
+| ISSUE-029 | 🟢 DONE | 보안(공유백엔드) | 마켓플레이스 보안 가드(products 컬럼 트리거) 대응 — 관리자 RPC 호환 확인 | 2026-07-17 `enforce_products_owner_update_guard` 추가. admin RPC는 인증 세션→`is_admin()` 통과(검증). status 변경은 RPC 경유 필수(service_role 직접 쓰기 금지) |
 
 ---
 
@@ -293,3 +294,10 @@
   - **입찰 0건**(예: 676): 거래 불가 → **FO /my-products·BO /products에서 "강제종료"** 표시(/transactions 불가 — 상대방 없음).
 - **검증**: RPC `[ADMINTEST]`(입찰有→force_closed+취소거래 1, 입찰無→force_closed+거래0)·비-admin 거부; 676→강제종료·f74b17f4 재매핑(failed→force_closed); BO·FO `check-all` EXIT 0; advisor security ERROR 0; Playwright FO /my-products("강제종료" 필터·676 배지)·/transactions(강제종료 표시, 유찰과 구분) 확인.
 - **주의**: shared 변경은 양 앱 재동기화 필요(배지 색상은 Turbopack 캐시로 dev 재시작 시 완전 반영, 라벨은 즉시). 강제종료는 기존 강제 내림(withdrawn)과 별개 상태로 공존.
+
+## ISSUE-029 · 공유 백엔드 products 컬럼 가드 대응 🟢 DONE
+
+- **배경**: 마켓플레이스(start-kit-nextjs) 3인 코드리뷰(2026-07-17)로 **공유 Supabase 백엔드의 `products` 테이블에 소유자 컬럼 보호 가드**가 추가됨(마켓플레이스 ISSUE-030). `enforce_products_owner_update_guard` BEFORE UPDATE 트리거가 소유자 직접 UPDATE를 `description`/`buy_now_price`만 허용하고, 나머지 컬럼(`status`/`current_price`/`auction_ends_at`/`winner_id` 등)은 차단한다. 관리자·RPC 내부 정상 갱신은 각각 `is_admin()`·트랜잭션 로컬 우회 플래그로 통과.
+- **관리자 앱 영향 확인**: 관리자 제재 RPC(`admin_force_close_auction`/`admin_force_withdraw_product`/`admin_blind_content`/`admin_unblind_content`)는 모두 진입 시 `_require_admin()`으로 관리자를 강제하고, 앱은 **인증된 관리자 세션 서버 클라이언트**(`createClient`, service_role 아님)로 호출한다(`app/(console)/products/[id]/_actions.ts` 등). 따라서 RPC 내부 `auth.uid()`=관리자 → 가드의 `is_admin()=true` 분기로 통과한다. (강제종료/강제내림 코드 주석에도 "service_role 는 auth.uid() NULL로 권한/감사 붕괴"라며 인증 세션 사용을 명시)
+- **검증(2026-07-17)**: 관리자 세션을 시뮬레이션(JWT claims)해 가드 적용 상태에서 `admin_force_close_auction` 호출 → 에러 없이 `status='force_closed'`·`winner_id=null` 정상 처리(트랜잭션 롤백 검증, 테스트 데이터 무변경). 관리자 앱 전체에 `products` 직접 테이블 쓰기(`.from('products').update`)·`createAdminClient()` products mutation 없음도 확인.
+- **주의(운영 규칙)**: 향후 관리자 기능에서 `products`의 `status`/`current_price`/`winner_id`/`auction_ends_at` 등을 변경할 때는 **반드시 admin RPC를 경유**할 것. service_role로 테이블을 직접 쓰면 `auth.uid()=null → is_admin()=false`라 가드에 차단된다(감사·권한 일관성도 붕괴). 문제 발생 시 마켓플레이스 `supabase/rollback/20260717_rollback_issue_030_031_034.sql`로 가드 원복 가능.
