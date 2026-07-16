@@ -18,3 +18,11 @@ build
 
 # shrimp-task-manager 작업 데이터
 shrimp_data/
+
+# Claude Code 로컬 에이전트 메모리(공유 설정 .claude/agents 는 계속 추적)
+.claude/agent-memory/
+
+# 검증용 스크린샷(저장소 루트 산출물)
+/*.png
+/*.jpg
+/*.jpeg
